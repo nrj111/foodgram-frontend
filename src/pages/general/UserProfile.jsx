@@ -1,11 +1,37 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import '../../styles/profile.css'
 
 const UserProfile = () => {
   const inputRef = useRef(null)
+  const navigate = useNavigate()
+  const API_BASE = (import.meta.env?.VITE_API_BASE || '').replace(/\/$/, '')
+
   const [name] = useState(() => localStorage.getItem('profileName') || 'Your Profile')
   const [email] = useState(() => localStorage.getItem('profileEmail') || '')
   const [avatar, setAvatar] = useState(() => localStorage.getItem('avatarUrl') || '')
+
+  // Food Partner role detection
+  const [isPartner, setIsPartner] = useState(false)
+  const [checkingRole, setCheckingRole] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    async function checkPartner() {
+      try {
+        if (!API_BASE) throw new Error('Missing VITE_API_BASE')
+        await axios.get(`${API_BASE}/api/auth/foodPartner/me`, { withCredentials: true })
+        if (active) setIsPartner(true)
+      } catch {
+        if (active) setIsPartner(false)
+      } finally {
+        if (active) setCheckingRole(false)
+      }
+    }
+    checkPartner()
+    return () => { active = false }
+  }, [API_BASE])
 
   const handlePick = () => inputRef.current?.click()
 
@@ -30,8 +56,19 @@ const UserProfile = () => {
     reader.readAsDataURL(f)
   }
 
+  const goExplore = () => navigate('/')
+  const goUpload = () => navigate('/create')
+
   return (
     <main className="user-profile-page">
+      {/* Partner action bar (Explore, Upload Reel) */}
+      {!checkingRole && isPartner && (
+        <nav className="partner-actions" aria-label="Partner actions" style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 16 }}>
+          <button onClick={goExplore} className="btn" aria-label="Explore">Explore</button>
+          <button onClick={goUpload} className="btn btn-primary" aria-label="Upload Reel">Upload Reel</button>
+        </nav>
+      )}
+
       <section className="user-profile-card">
         <div className="user-avatar-wrap">
           <div className="user-avatar">
