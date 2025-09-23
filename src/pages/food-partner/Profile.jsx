@@ -7,15 +7,16 @@ const Profile = () => {
     const { id } = useParams()
     const [ profile, setProfile ] = useState(null)
     const [ videos, setVideos ] = useState([])
+    const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
 
     useEffect(() => {
-        axios.get(`http://localhost:3000/api/food-partner/${id}`, { withCredentials: true })
+        axios.get(`${API_BASE}/api/food-partner/${id}`)
             .then(response => {
                 setProfile(response.data.foodPartner)
                 setVideos(response.data.foodPartner.foodItems || [])
             })
             .catch(() => { /* noop */ })
-    }, [ id ])
+    }, [ id, API_BASE ])
 
     const postsCount = videos.length
     const totalLikes = videos.reduce((sum, v) => sum + (v.likeCount || 0), 0)

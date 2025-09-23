@@ -35,10 +35,12 @@ const FoodPartnerLogin = () => {
           localStorage.setItem('profileName', p.fullName || p.name || '')
           localStorage.setItem('profileEmail', p.email || '')
           localStorage.setItem('profileType', 'partner')
+          const pid = p.id || p._id
+          if (pid) localStorage.setItem('partnerId', pid)
         } catch (error) { 
           console.error(error)
         }
-        navigate("/food-partner/profile");
+        navigate("/"); // go to feed
       } else {
         const msg = response.data?.message || "Login failed";
         setError(msg);
