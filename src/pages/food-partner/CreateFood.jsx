@@ -61,17 +61,39 @@ const CreateFood = () => {
             return;
         }
 
-        const formData = new FormData();
-        formData.append('name', name);
-        formData.append('description', description);
-        formData.append('price', String(nPrice));               // <-- added
-        formData.append("video", videoFile);
-
         try {
             setUploading(true);
-            const response = await axios.post(`${API_BASE}/api/food`, formData, {
-                withCredentials: true,
-            });
+
+            // 1) Get ImageKit auth from backend (partner-protected)
+            const { data: auth } = await axios.get(`${API_BASE}/api/food/upload/auth`, { withCredentials: true });
+
+            // 2) Upload file directly to ImageKit from the browser
+            const uploadUrl = `${auth.urlEndpoint.replace(/\/$/, '')}/upload`;
+            const fd = new FormData();
+            fd.append('file', videoFile);
+            fd.append('fileName', videoFile.name || 'upload.mp4');
+            fd.append('publicKey', auth.publicKey);
+            fd.append('signature', auth.signature);
+            fd.append('expire', String(auth.expire));
+            fd.append('token', auth.token);
+
+            const ikRes = await fetch(uploadUrl, { method: 'POST', body: fd });
+            if (!ikRes.ok) {
+                const errText = await ikRes.text().catch(() => '');
+                throw new Error(`ImageKit upload failed: ${ikRes.status} ${errText}`);
+            }
+            const ikJson = await ikRes.json();
+            if (!ikJson || !ikJson.url) {
+                throw new Error('ImageKit did not return a url');
+            }
+
+            // 3) Create food on backend with the remote URL (no large payload)
+            const response = await axios.post(`${API_BASE}/api/food`, {
+                name,
+                description,
+                price: nPrice,
+                videoUrl: ikJson.url
+            }, { withCredentials: true });
 
             if (response.status === 201) {
                 window.toast?.("Reel uploaded", { type: "success" });
@@ -82,7 +104,7 @@ const CreateFood = () => {
                 window.toast?.(msg, { type: "error" });
             }
         } catch (err) {
-            const msg = err.response?.data?.message || "Upload failed. Check console/network for details.";
+            const msg = err?.response?.data?.message || err?.message || "Upload failed. Check console/network for details.";
             setFileError(msg);
             window.toast?.(msg, { type: "error" });
         } finally {
