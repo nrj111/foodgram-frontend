@@ -7,17 +7,20 @@ const FoodPartnerLogin = () => {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [showPwd, setShowPwd] = useState(false);
+  const [loading, setLoading] = useState(false);
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     const email = e.target.email.value.trim();
     const password = e.target.password.value;
 
     if (!email || !password) {
       setError("Email and password are required");
+      setLoading(false);
       return;
     }
 
@@ -50,6 +53,8 @@ const FoodPartnerLogin = () => {
       const msg = err.response?.data?.message || "Login failed";
       setError(msg);
       window.toast?.(msg, { type: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,11 +80,17 @@ const FoodPartnerLogin = () => {
             </div>
           </div>
           {error && <div className="error-message" role="alert">{error}</div>}
-          <button className="auth-submit" type="submit">Sign In</button>
+          <button className="auth-submit" type="submit" disabled={loading}>Sign In</button>
         </form>
         <div className="auth-alt-action">
           New partner? <a href="/food-partner/register">Create an account</a>
         </div>
+        {loading && (
+          <div className="auth-loading-overlay" role="alert" aria-busy="true" aria-live="polite">
+            <div className="auth-spinner" aria-hidden="true"></div>
+            <div>Signing in…</div>
+          </div>
+        )}
       </div>
     </div>
   );

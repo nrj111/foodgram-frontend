@@ -7,11 +7,13 @@ const FoodPartnerRegister = () => {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [showPwd, setShowPwd] = useState(false);
+  const [loading, setLoading] = useState(false);
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     const name = e.target.businessName.value.trim();
     const contactName = e.target.contactName.value.trim();
@@ -22,6 +24,7 @@ const FoodPartnerRegister = () => {
 
     if (!name || !contactName || !phone || !address || !email || !password) {
       setError("All fields are required");
+      setLoading(false);
       return;
     }
 
@@ -52,6 +55,8 @@ const FoodPartnerRegister = () => {
       const msg = err.response?.data?.message || "Registration failed";
       setError(msg);
       window.toast?.(msg, { type: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -102,12 +107,18 @@ const FoodPartnerRegister = () => {
             <p className="small-note">Full address helps customers find you faster.</p>
           </div>
           {error && <div className="error-message" role="alert">{error}</div>}
-          <button className="auth-submit" type="submit">Create Partner Account</button>
+          <button className="auth-submit" type="submit" disabled={loading}>Create Partner Account</button>
         </form>
         <div className="auth-alt-action">
           Already a partner? <Link to="/food-partner/login">Sign in</Link>
         </div>
       </div>
+      {loading && (
+        <div className="auth-loading-overlay" role="alert" aria-busy="true" aria-live="polite">
+          <div className="auth-spinner" aria-hidden="true"></div>
+          <div>Creating account…</div>
+        </div>
+      )}
     </div>
   );
 };
