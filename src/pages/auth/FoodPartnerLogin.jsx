@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import '../../styles/auth-shared.css';
 
@@ -83,7 +83,7 @@ const FoodPartnerLogin = () => {
           <button className="auth-submit" type="submit" disabled={loading}>Sign In</button>
         </form>
         <div className="auth-alt-action">
-          New partner? <a href="/food-partner/register">Create an account</a>
+          New partner? <Link to="/food-partner/register">Create an account</Link>
         </div>
         {loading && (
           <div className="auth-loading-overlay" role="alert" aria-busy="true" aria-live="polite">
