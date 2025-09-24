@@ -8,7 +8,7 @@ const Home = () => {
     const [ videos, setVideos ] = useState([])
     const [ loading, setLoading ] = useState(true)
     const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
-    const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodram%20Logo.png?updatedAt=1758692370991'
+    const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
 
     useEffect(() => {
         setLoading(true)
