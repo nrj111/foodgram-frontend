@@ -8,6 +8,7 @@ const Home = () => {
     const [ videos, setVideos ] = useState([])
     const [ loading, setLoading ] = useState(true)
     const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
+    const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodram%20Logo.png?updatedAt=1758692370991'
 
     useEffect(() => {
         setLoading(true)
@@ -43,7 +44,9 @@ const Home = () => {
         return (
             <section className="landing-hero" role="region" aria-label="Welcome">
                 <div className="landing-hero__card">
-                    <div className="landing-hero__brand" aria-hidden="true">FG</div>
+                    <div className="landing-hero__brand" aria-hidden="true">
+                        <img src={LOGO_URL} alt="" />
+                    </div>
                     <h1 className="landing-hero__title">Discover delicious reels near you</h1>
                     <p className="landing-hero__subtitle">
                         Scroll through bite-sized videos from food partners. Like, save, and add to cart in a tap.

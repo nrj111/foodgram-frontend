@@ -208,6 +208,13 @@
   box-shadow: 0 10px 28px rgba(0,0,0,.28);
 }
 
+.landing-hero__brand img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
+}
+
 .landing-hero__title {
   font-size: clamp(1.5rem, 2vw + 1rem, 2rem);
   font-weight: 800;
@@ -344,6 +351,12 @@
   font-size: 1.15rem;
   text-shadow: 0 1px 2px rgba(0,0,0,.45);
   pointer-events: auto;
+}
+
+.ig-brand-logo {
+  height: 28px;
+  width: auto;
+  display: block;
 }
 
 .ig-actions { display: inline-flex; gap: 8px; pointer-events: auto; }

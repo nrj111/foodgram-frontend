@@ -15,6 +15,7 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.' 
   const [following, setFollowing] = useState({}) // id => followed?
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
+  const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodram%20Logo.png?updatedAt=1758692370991'
 
   // derive profile display
   const profileName = typeof window !== 'undefined' ? (localStorage.getItem('profileName') || 'Your Profile') : 'Your Profile'
@@ -110,7 +111,9 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.' 
     <div className="reels-page">
       {/* IG-like top header */}
       <header className="ig-header" role="banner" aria-label="Top bar">
-        <div className="ig-brand" aria-label="Brand">Foodgram</div>
+        <div className="ig-brand" aria-label="Foodgram">
+          <img className="ig-brand-logo" src={LOGO_URL} alt="Foodgram logo" />
+        </div>
         <div className="ig-actions">
           <Link to="/create-food" className="ig-icon-btn" aria-label="Upload reel">
             <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
