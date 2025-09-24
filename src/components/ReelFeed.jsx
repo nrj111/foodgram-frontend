@@ -290,7 +290,13 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.' 
               <Link to="/create-food" className="sheet-item" onClick={() => setSheetOpen(false)}>Upload Reel</Link>
               <Link to="/cart" className="sheet-item" onClick={() => setSheetOpen(false)}>Cart</Link>
               <Link to="/saved" className="sheet-item" onClick={() => setSheetOpen(false)}>Saved</Link>
-              <button type="button" className="sheet-item" onClick={() => { window.toast?.('Settings coming soon', {type:'info'}); setSheetOpen(false) }}>Settings</button>
+              <button
+                type="button"
+                className="sheet-item"
+                onClick={() => { setSheetOpen(false); navigate('/profile'); }} // open settings -> profile
+              >
+                Settings
+              </button>
               <button type="button" className="sheet-item danger" onClick={handleLogout}>Log out</button>
             </nav>
           </aside>

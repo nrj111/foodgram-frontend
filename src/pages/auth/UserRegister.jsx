@@ -7,11 +7,13 @@ const UserRegister = () => {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [showPwd, setShowPwd] = useState(false);
+  const [loading, setLoading] = useState(false);
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     const firstName = e.target.firstName.value.trim();
     const lastName = e.target.lastName.value.trim();
@@ -20,6 +22,7 @@ const UserRegister = () => {
 
     if (!firstName || !lastName || !email || !password) {
       setError("All fields are required");
+      setLoading(false);
       return;
     }
 
@@ -52,6 +55,8 @@ const UserRegister = () => {
       const msg = err.response?.data?.message || "Registration failed";
       setError(msg);
       window.toast?.(msg, { type: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,12 +98,18 @@ const UserRegister = () => {
             </div>
           </div>
           {error && <div className="error-message" role="alert">{error}</div>}
-          <button className="auth-submit" type="submit">Sign Up</button>
+          <button className="auth-submit" type="submit" disabled={loading}>Sign Up</button>
         </form>
         <div className="auth-alt-action">
           Already have an account? <Link to="/user/login">Sign in</Link>
         </div>
       </div>
+      {loading && (
+        <div className="auth-loading-overlay" role="alert" aria-busy="true" aria-live="polite">
+          <div className="auth-spinner" aria-hidden="true"></div>
+          <div>Creating account…</div>
+        </div>
+      )}
     </div>
   );
 };

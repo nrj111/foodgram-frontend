@@ -20,9 +20,19 @@ const UserProfile = () => {
     let active = true
     async function checkPartner() {
       try {
-        if (!API_BASE) throw new Error('Missing VITE_API_BASE')
-        await axios.get(`${API_BASE}/api/auth/foodPartner/me`, { withCredentials: true })
-        if (active) setIsPartner(true)
+        // quick local fallback
+        const localType = (typeof window !== 'undefined' && localStorage.getItem('profileType')) || ''
+        if (localType === 'partner') {
+          if (active) { setIsPartner(true); setCheckingRole(false) }
+          return
+        }
+        // remote check (optional)
+        if (API_BASE) {
+          await axios.get(`${API_BASE}/api/auth/foodPartner/me`, { withCredentials: true })
+          if (active) setIsPartner(true)
+        } else {
+          if (active) setIsPartner(false)
+        }
       } catch {
         if (active) setIsPartner(false)
       } finally {
@@ -57,7 +67,7 @@ const UserProfile = () => {
   }
 
   const goExplore = () => navigate('/')
-  const goUpload = () => navigate('/create')
+  const goUpload = () => navigate('/create-food') // fixed path
 
   return (
     <main className="user-profile-page">
