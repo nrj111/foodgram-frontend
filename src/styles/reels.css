@@ -195,8 +195,9 @@
 
 /* Circular brand mark */
 .landing-hero__brand {
-  width: 64px;
-  height: 64px;
+  /* was 64x64 */
+  width: 84px;
+  height: 84px;
   margin: 0 auto var(--space-3);
   border-radius: 999px;
   display: grid;
@@ -209,8 +210,9 @@
 }
 
 .landing-hero__brand img {
-  width: 70%;
-  height: 70%;
+  /* was 70% */
+  width: 80%;
+  height: 80%;
   object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
 }
@@ -354,9 +356,12 @@
 }
 
 .ig-brand-logo {
-  height: 28px;
+  /* was: height: 28px */
+  height: 36px;
+  max-height: 36px;
   width: auto;
   display: block;
+  object-fit: contain;
 }
 
 .ig-actions { display: inline-flex; gap: 8px; pointer-events: auto; }

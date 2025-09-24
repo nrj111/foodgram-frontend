@@ -15,7 +15,7 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.' 
   const [following, setFollowing] = useState({}) // id => followed?
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
-  const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodram%20Logo.png?updatedAt=1758692370991'
+  const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
 
   // derive profile display
   const profileName = typeof window !== 'undefined' ? (localStorage.getItem('profileName') || 'Your Profile') : 'Your Profile'
