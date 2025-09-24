@@ -43,13 +43,31 @@ const Home = () => {
         return (
             <section className="landing-hero" role="region" aria-label="Welcome">
                 <div className="landing-hero__card">
-                    <h1 className="landing-hero__title">Welcome to Foodgram</h1>
+                    <div className="landing-hero__brand" aria-hidden="true">FG</div>
+                    <h1 className="landing-hero__title">Discover delicious reels near you</h1>
                     <p className="landing-hero__subtitle">
-                        Discover tasty reels from local food partners. Sign in to like, save, and order.
+                        Scroll through bite-sized videos from food partners. Like, save, and add to cart in a tap.
                     </p>
+
+                    <div className="landing-hero__badges" aria-label="Highlights">
+                        <span className="badge">Fast</span>
+                        <span className="badge">Tasty</span>
+                        <span className="badge">Local</span>
+                    </div>
+
+                    <ul className="landing-hero__features" aria-label="Why you’ll love it">
+                        <li>Explore reels tailored to your taste</li>
+                        <li>Save your favorites for later</li>
+                        <li>Order directly from partners</li>
+                    </ul>
+
                     <div className="landing-hero__actions">
                         <Link to="/user/login" className="btn">Sign in</Link>
                         <Link to="/register" className="btn btn-primary">Create account</Link>
+                    </div>
+
+                    <div className="landing-hero__alt">
+                        Are you a food partner? <Link to="/food-partner/register" className="btn btn-outline">Become a partner</Link>
                     </div>
                 </div>
             </section>

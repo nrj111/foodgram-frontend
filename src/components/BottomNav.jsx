@@ -1,8 +1,27 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import '../styles/bottom-nav.css'
 
 const BottomNav = () => {
+  const [authed, setAuthed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return !!localStorage.getItem('profileType')
+  })
+
+  useEffect(() => {
+    const update = () => {
+      try { setAuthed(!!localStorage.getItem('profileType')) } catch {}
+    }
+    window.addEventListener('focus', update)
+    window.addEventListener('storage', update)
+    return () => {
+      window.removeEventListener('focus', update)
+      window.removeEventListener('storage', update)
+    }
+  }, [])
+
+  if (!authed) return null
+
   return (
     <nav className="bottom-nav" role="navigation" aria-label="Bottom">
       <div className="bottom-nav__inner">
