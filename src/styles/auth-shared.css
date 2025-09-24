@@ -190,13 +190,27 @@ body, .auth-card, .field-group input { transition: background 200ms ease, color 
 }
 
 .auth-spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid rgba(255,255,255,.35);
-  border-top-color: #fff;
+  width: 56px; /* was 36px */
+  height: 56px;
+  border: 4px solid rgba(255,255,255,.18);           /* softer outer ring */
+  border-top-color: #fff;                             /* highlight segment */
   border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,.08) 0 60%, transparent 61%); /* glassy inner */
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
   animation: auth-spin 900ms linear infinite;
   position: relative; /* enable pseudo-element positioning */
+}
+
+/* soft halo ring */
+.auth-spinner::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.12), transparent 60%);
+  filter: blur(1px);
+  pointer-events: none;
 }
 
 /* Inject Foodgram logo inside spinner */
@@ -204,13 +218,13 @@ body, .auth-card, .field-group input { transition: background 200ms ease, color 
   content: "";
   position: absolute;
   top: 50%; left: 50%;
-  width: 65%; height: 65%;
+  width: 60%; height: 60%; /* slightly smaller to breathe */
   transform: translate(-50%, -50%);
-  border-radius: 50%;
+  border-radius: 12px;
   background:
     #fff
     url('https://ik.imagekit.io/nrj/Foodram%20Logo.png?updatedAt=1758692370991')
-    center / 70% no-repeat;
+    center / 75% no-repeat;
   box-shadow: 0 1px 4px rgba(0,0,0,.12) inset;
   pointer-events: none;
 }
