@@ -198,6 +198,23 @@
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 900ms linear infinite;
+  position: relative; /* enable pseudo-element positioning */
+}
+
+/* Inject Foodgram logo inside spinner */
+.spinner::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 65%; height: 65%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    #fff
+    url('https://ik.imagekit.io/nrj/Foodram%20Logo.png?updatedAt=1758692370991')
+    center / 70% no-repeat;
+  box-shadow: 0 1px 4px rgba(0,0,0,.12) inset;
+  pointer-events: none;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
