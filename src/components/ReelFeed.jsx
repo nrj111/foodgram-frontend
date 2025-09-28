@@ -219,10 +219,27 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.' 
                         (item.foodPartner ? `Store ${String(item.foodPartner).slice(-4)}` : 'Store');
                   const letter = (displayName || 'S').trim().charAt(0).toUpperCase();
                   const isFollowing = !!following[item._id];
+                  const partnerId = (() => {
+                    if (item.foodPartner && typeof item.foodPartner === 'object') return item.foodPartner._id || item.foodPartner.id;
+                    if (typeof item.foodPartner === 'string') return item.foodPartner;
+                    return null;
+                  })();
                   return (
                     <div className="reel-author">
                       <div className="reel-avatar" aria-hidden="true">{letter}</div>
-                      <div className="reel-author-name" title={displayName}>{displayName}</div>
+                      {partnerId ? (
+                        <Link
+                          to={`/food-partner/${partnerId}`}
+                          className="reel-author-name"
+                          title={displayName}
+                          aria-label={`Visit ${displayName} profile`}
+                          onClick={(e)=>e.stopPropagation()}
+                        >
+                          {displayName}
+                        </Link>
+                      ) : (
+                        <div className="reel-author-name" title={displayName}>{displayName}</div>
+                      )}
                       <button
                         type="button"
                         className={`btn-follow ${isFollowing ? 'is-following' : ''}`}
