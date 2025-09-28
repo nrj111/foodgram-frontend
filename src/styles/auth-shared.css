@@ -191,7 +191,7 @@ body, .auth-card, .field-group input { transition: background 200ms ease, color 
 
 .auth-spinner {
   --size: 84px;
-  --ring-thickness: 11px;
+  --ring-thickness: 6px;
   --progress: 0;
   width: var(--size);
   height: var(--size);
@@ -231,7 +231,7 @@ body, .auth-card, .field-group input { transition: background 200ms ease, color 
 .auth-spinner::after {
   content: "";
   position: absolute;
-  inset: calc(var(--ring-thickness) + 4px);
+  inset: calc(var(--ring-thickness) + 3px);
   border-radius: 14px;
   background:
     url('https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925')
