@@ -15,6 +15,7 @@ const CreateFood = () => {
 
     const navigate = useNavigate();
     const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
+    const IK_UPLOAD_ENDPOINT = 'https://upload.imagekit.io/api/v1/files/upload'; // fixed
 
     useEffect(() => {
         if (!videoFile) {
@@ -64,36 +65,57 @@ const CreateFood = () => {
         try {
             setUploading(true);
 
-            // 1) Get ImageKit auth from backend (partner-protected)
-            const { data: auth } = await axios.get(`${API_BASE}/api/food/upload/auth`, { withCredentials: true });
-
-            // 2) Upload file directly to ImageKit from the browser
-            const uploadUrl = `${auth.urlEndpoint.replace(/\/$/, '')}/upload`;
-            const fd = new FormData();
-            fd.append('file', videoFile);
-            fd.append('fileName', videoFile.name || 'upload.mp4');
-            fd.append('publicKey', auth.publicKey);
-            fd.append('signature', auth.signature);
-            fd.append('expire', String(auth.expire));
-            fd.append('token', auth.token);
-
-            const ikRes = await fetch(uploadUrl, { method: 'POST', body: fd });
-            if (!ikRes.ok) {
-                const errText = await ikRes.text().catch(() => '');
-                throw new Error(`ImageKit upload failed: ${ikRes.status} ${errText}`);
-            }
-            const ikJson = await ikRes.json();
-            if (!ikJson || !ikJson.url) {
-                throw new Error('ImageKit did not return a url');
+            // 1) Get ImageKit auth from backend
+            let auth;
+            try {
+                const { data } = await axios.get(`${API_BASE}/api/food/upload/auth`, { withCredentials: true });
+                auth = data;
+            } catch (err) {
+                throw new Error(`Failed to obtain upload credentials: ${err?.response?.data?.message || err.message}`);
             }
 
-            // 3) Create food on backend with the remote URL (no large payload)
-            const response = await axios.post(`${API_BASE}/api/food`, {
-                name,
-                description,
-                price: nPrice,
-                videoUrl: ikJson.url
-            }, { withCredentials: true });
+            // 2) Attempt direct client upload to ImageKit
+            let remoteUrl = '';
+            try {
+                const fd = new FormData();
+                fd.append('file', videoFile);
+                fd.append('fileName', videoFile.name || 'upload.mp4');
+                fd.append('publicKey', auth.publicKey);
+                fd.append('signature', auth.signature);
+                fd.append('expire', String(auth.expire));
+                fd.append('token', auth.token);
+                fd.append('useUniqueFileName', 'true');
+
+                const ikRes = await fetch(IK_UPLOAD_ENDPOINT, { method: 'POST', body: fd });
+                if (!ikRes.ok) {
+                    const txt = await ikRes.text().catch(() => '');
+                    throw new Error(`ImageKit upload failed (${ikRes.status}): ${txt.slice(0,180)}`);
+                }
+                const ikJson = await ikRes.json();
+                if (!ikJson?.url) throw new Error('ImageKit did not return a url');
+                remoteUrl = ikJson.url;
+            } catch (err) {
+                console.warn('[ImageKit] Direct upload failed, attempting backend fallback:', err);
+            }
+
+            let response;
+            if (remoteUrl) {
+                // 3A) Create food with remote URL (JSON)
+                response = await axios.post(`${API_BASE}/api/food`, {
+                    name,
+                    description,
+                    price: nPrice,
+                    videoUrl: remoteUrl
+                }, { withCredentials: true });
+            } else {
+                // 3B) Fallback: send multipart with video file
+                const fd2 = new FormData();
+                fd2.append('name', name);
+                fd2.append('description', description);
+                fd2.append('price', String(nPrice));
+                fd2.append('video', videoFile);
+                response = await axios.post(`${API_BASE}/api/food`, fd2, { withCredentials: true });
+            }
 
             if (response.status === 201) {
                 window.toast?.("Reel uploaded", { type: "success" });
