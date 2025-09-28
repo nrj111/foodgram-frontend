@@ -627,20 +627,20 @@
 }
 /* Center logo */
 .fg-spinner::after {
-  content: "";
-  position: absolute;
-  width: 58%;
-  height: 58%;
-  border-radius: 16px;
+  /* make logo fill inner circle completely */
+  width: calc(100% - 22px); /* 2 * ring thickness (11px) */
+  height: calc(100% - 22px);
+  border-radius: 50%;
   background:
-    #fff
     url('https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925')
-    center / 70% no-repeat;
-  box-shadow: 0 1px 4px rgba(0,0,0,.18) inset, 0 2px 6px rgba(0,0,0,.25);
+    center / 100% 100% no-repeat;
+  box-shadow: none;
 }
 /* Override old pseudo elements */
 .fg-spinner::before,
 .fg-spinner::after { pointer-events: none; }
 
+@keyframes fg-ring-spin { to { transform: rotate(360deg); } }
+@keyframes fg-spin { to { transform: rotate(-360deg); } }
 @keyframes fg-ring-spin { to { transform: rotate(360deg); } }
 @keyframes fg-spin { to { transform: rotate(-360deg); } }

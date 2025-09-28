@@ -229,18 +229,18 @@ body, .auth-card, .field-group input { transition: background 200ms ease, color 
 
 /* Inject Foodgram logo inside spinner */
 .auth-spinner::after {
-  content: "";
-  position: absolute;
-  width: 58%;
-  height: 58%;
-  border-radius: 16px;
+  width: calc(100% - 22px);
+  height: calc(100% - 22px);
+  border-radius: 50%;
   background:
-    #fff
     url('https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925')
-    center / 70% no-repeat;
-  box-shadow: 0 1px 4px rgba(0,0,0,.18) inset, 0 2px 6px rgba(0,0,0,.25);
-  pointer-events: none;
+    center / 100% 100% no-repeat;
+  box-shadow: none;
 }
+
+@keyframes auth-spin { to { transform: rotate(360deg); } }
+@keyframes auth-ring { to { transform: rotate(360deg); } }
+
 
 @keyframes auth-spin { to { transform: rotate(360deg); } }
 @keyframes auth-ring { to { transform: rotate(360deg); } }
