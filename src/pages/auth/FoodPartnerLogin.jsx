@@ -43,6 +43,9 @@ const FoodPartnerLogin = () => {
         } catch (error) { 
           console.error(error)
         }
+        try {
+          await fetch(`${API_BASE}/api/auth/user/logout`, { credentials: 'include' }) // ensure user session cleared
+        } catch {}
         navigate("/"); // go to feed
       } else {
         const msg = response.data?.message || "Login failed";

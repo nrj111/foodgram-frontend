@@ -37,6 +37,7 @@ const UserLogin = () => {
           localStorage.setItem('profileName', response.data?.fullName || '')
           localStorage.setItem('profileEmail', response.data?.email || '')
           localStorage.setItem('profileType', 'user')
+          await fetch(`${API_BASE}/api/auth/foodPartner/logout`, { credentials: 'include' }) // ensure partner session cleared
         } catch (error) { console.error(error) }
         navigate("/");
       } else {

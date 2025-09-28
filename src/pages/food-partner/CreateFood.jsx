@@ -18,6 +18,28 @@ const CreateFood = () => {
     const IK_UPLOAD_ENDPOINT = 'https://upload.imagekit.io/api/v1/files/upload'; // fixed
 
     useEffect(() => {
+        // Access control: only partners
+        const localType = localStorage.getItem('profileType');
+        if (localType !== 'partner') {
+            navigate('/user/login');
+            return;
+        }
+        // Validate server session (defense in depth)
+        (async () => {
+            try {
+                await axios.get(`${API_BASE}/api/auth/foodPartner/me`, { withCredentials: true });
+            } catch {
+                // Session invalid -> clear local + force login
+                try {
+                    await fetch(`${API_BASE}/api/auth/foodPartner/logout`, { credentials: 'include' });
+                } catch {}
+                localStorage.removeItem('profileType');
+                navigate('/food-partner/login');
+            }
+        })();
+    }, [ API_BASE, navigate ]);
+
+    useEffect(() => {
         if (!videoFile) {
             setVideoURL('');
             return;
