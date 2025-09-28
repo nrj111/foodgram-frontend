@@ -55,7 +55,14 @@
   border: 2px solid var(--color-border);
 }
 
-.ig-profile-avatar-wrap { position: relative; width: 140px; height: 140px; }
+.ig-profile-avatar-wrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: grid;
+  place-items: center;
+}
+
 .ig-profile-avatar,
 .ig-profile-avatar.placeholder,
 .ig-profile-avatar.is-empty {
@@ -171,24 +178,15 @@
   background: var(--color-border);
 }
 
-.profile-grid-item { 
-    border: none;
-    aspect-ratio: 1 / 1;
-    background: #000;
-    overflow: hidden;
-}
-
-.profile-grid-item.as-button {
-  border: 0;
-  padding: 0;
-  background: #000;
+.profile-grid-item {
+  position: relative;
   cursor: pointer;
-  text-align: inherit;
+  background: #000;
+  border: none;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
 }
-.profile-grid-item.as-button:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
+.profile-grid-item.empty { cursor: default; }
 
 .profile-grid-video {
   display: block;
@@ -198,7 +196,9 @@
   background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: 1.5rem;
+  transition: filter .3s ease, transform .3s ease;
 }
+.profile-grid-item:hover .profile-grid-video { filter: brightness(.75); transform: scale(1.015); }
 
 /* User profile styles */
 .user-profile-page {
