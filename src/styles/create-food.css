@@ -192,16 +192,20 @@
 }
 
 .spinner {
-  width: 80px;
-  height: 80px;
+  --size: 84px;
+  --ring-thickness: 11px;
+  --progress: 0;
+  width: var(--size);
+  height: var(--size);
   position: relative;
   display: grid;
   place-items: center;
-  animation: spin 1.4s linear infinite;
   filter: drop-shadow(0 4px 14px rgba(0,0,0,.35));
-  background: none; /* remove old radial bg */
-  border: 0;        /* remove legacy border */
+  animation: upload-progress-spin 2.2s linear infinite;
+  background: none;
+  border: 0;
 }
+
 .spinner::before {
   content: "";
   position: absolute;
@@ -209,32 +213,35 @@
   border-radius: 50%;
   background:
     conic-gradient(
-      from 0turn,
       var(--color-accent) 0deg,
-      var(--color-accent-hover) 140deg,
-      var(--color-accent) 320deg,
-      var(--color-accent) 360deg
+      var(--color-accent-hover) calc(var(--progress) * 1deg),
+      rgba(255,255,255,0.15) calc(var(--progress) * 1deg),
+      rgba(255,255,255,0.08) 360deg
     );
-  -webkit-mask:
-    radial-gradient(circle,
-      transparent calc(50% - 11px),
-      #000 calc(50% - 10px));
-  mask:
-    radial-gradient(circle,
-      transparent calc(50% - 11px),
-      #000 calc(50% - 10px));
-  animation: spin 1.1s linear infinite;
+  -webkit-mask: radial-gradient(circle at center,
+      transparent 0 calc(50% - var(--ring-thickness)),
+      #000 calc(50% - var(--ring-thickness) + 1px) 100%);
+  mask: radial-gradient(circle at center,
+      transparent 0 calc(50% - var(--ring-thickness)),
+      #000 calc(50% - var(--ring-thickness) + 1px) 100%);
 }
+
 .spinner::after {
   content: "";
   position: absolute;
-  width: calc(100% - 22px);
-  height: calc(100% - 22px);
-  border-radius: 50%;
+  inset: calc(var(--ring-thickness) + 4px);
+  border-radius: 14px;
   background:
     url('https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925')
     center / 100% 100% no-repeat;
-  box-shadow: none;
+  image-rendering: -webkit-optimize-contrast;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  pointer-events: none;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes upload-progress-spin {
+  0%   { --progress:   0; transform: rotate(0deg); }
+  50%  { --progress: 360; transform: rotate(180deg); }
+  100% { --progress: 720; transform: rotate(360deg); }
+}

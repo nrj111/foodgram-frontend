@@ -589,58 +589,58 @@
   color: var(--color-text-secondary);
 }
 
-/* Spinner (logo inside) */
+/* Replace previous fg-spinner block with progress-bar style */
 .fg-spinner {
-  width: 80px;
-  height: 80px;
+  --size: 84px;
+  --ring-thickness: 11px;
+  --progress: 0;
+  width: var(--size);
+  height: var(--size);
   position: relative;
   display: grid;
   place-items: center;
-  animation: fg-spin 1.4s linear infinite;
   filter: drop-shadow(0 4px 14px rgba(0,0,0,.35));
+  animation: fg-progress-spin 2.2s linear infinite;
 }
-/* Animated ring */
+
 .fg-spinner::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  /* Conic gradient ring */
+  /* Progress sweep (accent -> hover accent then track) */
   background:
     conic-gradient(
-      from 0turn,
       var(--color-accent) 0deg,
-      var(--color-accent-hover) 140deg,
-      var(--color-accent) 320deg,
-      var(--color-accent) 360deg
+      var(--color-accent-hover) calc(var(--progress) * 1deg),
+      rgba(255,255,255,0.15) calc(var(--progress) * 1deg),
+      rgba(255,255,255,0.08) 360deg
     );
-  /* Hollow center using mask */
-  -webkit-mask:
-    radial-gradient(circle,
-      transparent calc(50% - 11px),
-      #000 calc(50% - 10px));
-  mask:
-    radial-gradient(circle,
-      transparent calc(50% - 11px),
-      #000 calc(50% - 10px));
-  animation: fg-ring-spin 1.2s linear infinite;
+  /* Carve inner hole for logo */
+  -webkit-mask: radial-gradient(circle at center,
+      transparent 0 calc(50% - var(--ring-thickness)),
+      #000 calc(50% - var(--ring-thickness) + 1px) 100%);
+  mask: radial-gradient(circle at center,
+      transparent 0 calc(50% - var(--ring-thickness)),
+      #000 calc(50% - var(--ring-thickness) + 1px) 100%);
 }
-/* Center logo */
+
 .fg-spinner::after {
-  /* make logo fill inner circle completely */
-  width: calc(100% - 22px); /* 2 * ring thickness (11px) */
-  height: calc(100% - 22px);
-  border-radius: 50%;
+  content: "";
+  position: absolute;
+  inset: calc(var(--ring-thickness) + 4px);
+  border-radius: 14px;
   background:
     url('https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925')
     center / 100% 100% no-repeat;
-  box-shadow: none;
+  /* Ensure logo fully visible without crop artifacts */
+  image-rendering: -webkit-optimize-contrast;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
-/* Override old pseudo elements */
-.fg-spinner::before,
-.fg-spinner::after { pointer-events: none; }
 
-@keyframes fg-ring-spin { to { transform: rotate(360deg); } }
-@keyframes fg-spin { to { transform: rotate(-360deg); } }
-@keyframes fg-ring-spin { to { transform: rotate(360deg); } }
-@keyframes fg-spin { to { transform: rotate(-360deg); } }
+@keyframes fg-progress-spin {
+  0%   { --progress:   0; transform: rotate(0deg); }
+  50%  { --progress: 360; transform: rotate(180deg); }
+  100% { --progress: 720; transform: rotate(360deg); }
+}
