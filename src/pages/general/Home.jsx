@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import '../../styles/reels.css'
 import ReelFeed from '../../components/ReelFeed'
 
@@ -9,6 +9,9 @@ const Home = () => {
     const [ loading, setLoading ] = useState(true)
     const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
     const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const focusId = params.get('v') || ''
 
     useEffect(() => {
         setLoading(true)
@@ -93,6 +96,7 @@ const Home = () => {
             onLike={likeVideo}
             onSave={saveVideo}
             emptyMessage="No videos available."
+            focusId={focusId}
         />
     )
 }

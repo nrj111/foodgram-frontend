@@ -1,14 +1,17 @@
-import React, { useState, useEffect} from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import '../../styles/profile.css'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 const Profile = () => {
     const { id } = useParams()
+    const navigate = useNavigate()
+    const avatarInputRef = useRef(null)
     const [ profile, setProfile ] = useState(null)
     const [ videos, setVideos ] = useState([])
     const [ following, setFollowing ] = useState(false)               // new local follow state
     const [ activeTab, setActiveTab ] = useState('reels')             // future-ready
+    const [ avatar, setAvatar ] = useState(() => localStorage.getItem('partnerAvatarUrl') || '')
     const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
 
     useEffect(() => {
@@ -33,6 +36,27 @@ const Profile = () => {
         window.toast?.(following ? 'Unfollowed' : 'Followed', { type: 'info' })
     }
 
+    const handleAvatarPick = () => {
+        if (!isOwner) return
+        avatarInputRef.current?.click()
+    }
+    const onAvatarFile = (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        if (!file.type.startsWith('image/')) {
+            window.toast?.('Please select an image', { type: 'error' })
+            return
+        }
+        const reader = new FileReader()
+        reader.onload = () => {
+            const url = String(reader.result || '')
+            setAvatar(url)
+            try { localStorage.setItem('partnerAvatarUrl', url) } catch {}
+            window.toast?.('Profile photo updated', { type: 'success' })
+        }
+        reader.readAsDataURL(file)
+    }
+
     const postsCount = videos.length
     const totalLikes = videos.reduce((sum, v) => sum + (v.likeCount || 0), 0)
     const totalSaves = videos.reduce((sum, v) => sum + (v.savesCount || 0), 0)
@@ -42,11 +66,22 @@ const Profile = () => {
             {/* Instagram-like header */}
             <section className="profile-header ig-profile-header">
                 <div className="ig-profile-top">
-                    <div className="ig-profile-avatar-wrap">
-                        <img
-                            className="ig-profile-avatar"
-                            src="https://images.unsplash.com/photo-1754653099086-3bddb9346d37?w=500&auto=format&fit=crop&q=60"
-                            alt=""
+                    <div className="ig-profile-avatar-wrap" onClick={handleAvatarPick}>
+                        {avatar
+                          ? <img className="ig-profile-avatar" src={avatar} alt="" />
+                          : <div className="ig-profile-avatar is-empty" aria-label="No avatar">
+                              <span className="avatar-letter">{(profile?.name||'P').charAt(0).toUpperCase()}</span>
+                              {isOwner && <button type="button" className="avatar-add-btn" aria-label="Add profile photo" onClick={handleAvatarPick}>+</button>}
+                            </div>}
+                        {!avatar && !isOwner && (
+                          <div className="ig-profile-avatar placeholder" />
+                        )}
+                        <input
+                          ref={avatarInputRef}
+                          type="file"
+                          accept="image/*"
+                          hidden
+                          onChange={onAvatarFile}
                         />
                     </div>
 
@@ -73,7 +108,12 @@ const Profile = () => {
                         </ul>
 
                         <div className="ig-profile-bio">
-                            <p className="ig-profile-address">{profile?.address || 'No address provided'}</p>
+                            <p className="ig-profile-address">
+                              <svg className="loc-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 21s6-5.2 6-11a6 6 0 0 0-12 0c0 5.8 6 11 6 11z"/><circle cx="12" cy="10" r="2.5"/>
+                              </svg>
+                              {profile?.address || 'No address provided'}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -96,7 +136,13 @@ const Profile = () => {
             {activeTab === 'reels' && (
               <section className="profile-grid" aria-label="Videos">
                   {videos.map((v) => (
-                      <div key={v._id || v.id} className="profile-grid-item">
+                      <button
+                        key={v._id || v.id}
+                        type="button"
+                        className="profile-grid-item as-button"
+                        onClick={() => navigate(`/?v=${encodeURIComponent(v._id || v.id)}`)}
+                        aria-label="Open reel in feed"
+                      >
                           <video
                               className="profile-grid-video"
                               src={v.video}
@@ -104,7 +150,7 @@ const Profile = () => {
                               playsInline
                               loop
                               preload="metadata"
-                              aria-label={v.name || 'Uploaded reel'}
+                              aria-hidden="true"
                           />
                           <div className="profile-grid-overlay">
                             <div className="overlay-stats">
@@ -126,7 +172,7 @@ const Profile = () => {
                               </span>
                             </div>
                           </div>
-                      </div>
+                      </button>
                   ))}
                   {videos.length === 0 && (
                     <div className="profile-grid-item empty" style={{ display:'grid', placeItems:'center', color:'var(--color-text-secondary)' }}>

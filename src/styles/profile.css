@@ -4,7 +4,7 @@
 .profile-page {
   max-width: 1100px;
   margin: 0 auto;
-  padding: var(--space-6) var(--space-6) var(--space-8);
+  padding: var(--space-6) var(--space-6) var(--space-8;
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -55,13 +55,48 @@
   border: 2px solid var(--color-border);
 }
 
-.ig-profile-avatar {
-  width: 96px;
-  height: 96px;
+.ig-profile-avatar-wrap { position: relative; width: 140px; height: 140px; }
+.ig-profile-avatar,
+.ig-profile-avatar.placeholder,
+.ig-profile-avatar.is-empty {
+  width: 140px;
+  height: 140px;
   border-radius: 999px;
   object-fit: cover;
+  display: grid;
+  place-items: center;
   background: var(--color-surface-alt);
   border: 2px solid var(--color-border);
+  position: relative;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+.ig-profile-avatar.is-empty { font-size: 2.4rem; }
+.avatar-letter { pointer-events: none; }
+.avatar-add-btn {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+  border: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,.3);
+}
+.avatar-add-btn:hover { filter: brightness(1.05); }
+.avatar-add-btn:active { transform: scale(.94); }
+
+.loc-icon {
+  margin-right: 6px;
+  stroke: currentColor;
+  vertical-align: middle;
 }
 
 .profile-info { display: grid; gap: var(--space-3); }
@@ -141,6 +176,18 @@
     aspect-ratio: 1 / 1;
     background: #000;
     overflow: hidden;
+}
+
+.profile-grid-item.as-button {
+  border: 0;
+  padding: 0;
+  background: #000;
+  cursor: pointer;
+  text-align: inherit;
+}
+.profile-grid-item.as-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .profile-grid-video {

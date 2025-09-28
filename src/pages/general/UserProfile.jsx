@@ -86,9 +86,11 @@ const UserProfile = () => {
               ? <img src={avatar} alt="" />
               : <span>{name?.trim()?.charAt(0)?.toUpperCase() || 'U'}</span>}
           </div>
-          <button className="user-avatar-add" onClick={handlePick} aria-label="Add profile photo">
-            +
-          </button>
+          {!avatar && (
+            <button className="user-avatar-add" onClick={handlePick} aria-label="Add profile photo">
+              +
+            </button>
+          )}
           <input ref={inputRef} type="file" accept="image/*" onChange={onFile} hidden />
         </div>
 

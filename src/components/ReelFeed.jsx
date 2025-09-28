@@ -7,7 +7,7 @@ import { Link, useNavigate } from 'react-router-dom'
 // - onLike: (item) => void | Promise<void>
 // - onSave: (item) => void | Promise<void>
 // - emptyMessage: string
-const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.' }) => {
+const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.', focusId }) => {
   const videoRefs = useRef(new Map())
   const [sheetOpen, setSheetOpen] = useState(false)
   const [added, setAdded] = useState({}) // id => true for brief animation
@@ -43,6 +43,19 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.' 
     videoRefs.current.forEach((vid) => observer.observe(vid))
     return () => observer.disconnect()
   }, [items])
+
+  useEffect(() => {
+    if (!focusId) return
+    const el = document.getElementById(`reel-${focusId}`)
+    if (el) {
+      el.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      // attempt play after slight delay
+      setTimeout(() => {
+        const vid = el.querySelector('video')
+        vid?.play?.()
+      }, 400)
+    }
+  }, [focusId, items])
 
   const setVideoRef = (id) => (el) => {
     if (!el) { videoRefs.current.delete(id); return }
@@ -156,7 +169,12 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.' 
         )}
 
         {items.map((item) => (
-          <section key={item._id} className="reel" role="listitem">
+          <section
+            key={item._id}
+            id={`reel-${item._id}`}
+            className="reel"
+            role="listitem"
+          >
             <video
               ref={setVideoRef(item._id)}
               className="reel-video"
