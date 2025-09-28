@@ -6,7 +6,32 @@
   padding: var(--space-6);
   display: grid;
   gap: var(--space-6);
+  backdrop-filter: blur(6px);
 }
+
+/* Frosted glass surface utility */
+.cart-item,
+.cart-summary,
+.cart-empty {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+  .cart-item,
+  .cart-summary,
+  .cart-empty {
+    background: rgba(20,20,22,0.45);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+}
+
+/* Remove extra shadow to keep it light */
+.cart-item,
+.cart-summary { box-shadow: none; }
 
 .cart-head { display: flex; align-items: baseline; gap: var(--space-3); }
 .cart-title { font-size: 1.6rem; font-weight: 800; }
@@ -61,7 +86,7 @@
 }
 
 .cart-name { font-weight: 800; font-size: 1.05rem; }
-.cart-price { font-weight: 800; }
+.cart-price { font-weight: 800; letter-spacing: .4px; }
 
 .cart-desc { color: var(--color-text-secondary); font-size: .9rem; }
 

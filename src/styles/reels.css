@@ -567,3 +567,80 @@
   background: color-mix(in srgb, #fff 85%, var(--color-accent) 15%);
   color: #111;
 }
+
+/* Full-screen branded loader */
+.app-loading-screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 18px;
+  background:
+    radial-gradient(circle at 30% 20%, color-mix(in srgb,var(--color-accent) 8%, transparent) 0 40%, transparent 70%),
+    var(--color-bg);
+  z-index: 2000;
+  text-align: center;
+  padding: 32px;
+}
+
+.fg-loading-text {
+  font-weight: 600;
+  letter-spacing: .5px;
+  color: var(--color-text-secondary);
+}
+
+/* Spinner (logo inside) */
+.fg-spinner {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  animation: fg-spin 1.4s linear infinite;
+  filter: drop-shadow(0 4px 14px rgba(0,0,0,.35));
+}
+/* Animated ring */
+.fg-spinner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* Conic gradient ring */
+  background:
+    conic-gradient(
+      from 0turn,
+      var(--color-accent) 0deg,
+      var(--color-accent-hover) 140deg,
+      var(--color-accent) 320deg,
+      var(--color-accent) 360deg
+    );
+  /* Hollow center using mask */
+  -webkit-mask:
+    radial-gradient(circle,
+      transparent calc(50% - 11px),
+      #000 calc(50% - 10px));
+  mask:
+    radial-gradient(circle,
+      transparent calc(50% - 11px),
+      #000 calc(50% - 10px));
+  animation: fg-ring-spin 1.2s linear infinite;
+}
+/* Center logo */
+.fg-spinner::after {
+  content: "";
+  position: absolute;
+  width: 58%;
+  height: 58%;
+  border-radius: 16px;
+  background:
+    #fff
+    url('https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925')
+    center / 70% no-repeat;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18) inset, 0 2px 6px rgba(0,0,0,.25);
+}
+/* Override old pseudo elements */
+.fg-spinner::before,
+.fg-spinner::after { pointer-events: none; }
+
+@keyframes fg-ring-spin { to { transform: rotate(360deg); } }
+@keyframes fg-spin { to { transform: rotate(-360deg); } }

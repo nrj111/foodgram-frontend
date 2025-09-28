@@ -80,12 +80,10 @@ const Home = () => {
     // Optional lightweight loading
     if (loading && videos.length === 0) {
         return (
-            <section className="landing-hero" role="status" aria-busy="true">
-                <div className="landing-hero__card">
-                    <h2 className="landing-hero__title">Loading…</h2>
-                    <p className="landing-hero__subtitle">Fetching the latest food reels.</p>
-                </div>
-            </section>
+            <div className="app-loading-screen" role="status" aria-busy="true" aria-label="Loading Foodgram">
+                <div className="fg-spinner" aria-hidden="true"></div>
+                <p className="fg-loading-text">Loading Foodgram…</p>
+            </div>
         )
     }
 
