@@ -107,6 +107,20 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.' 
 
   const formatINR = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Number(n || 0));
 
+  function handleUploadClick() {
+    try {
+      const type = localStorage.getItem('profileType')
+      if (type !== 'partner') {
+        window.toast?.('Please sign in as food partner', { type: 'info' })
+        navigate('/food-partner/login')
+        return
+      }
+      navigate('/create-food')
+    } catch {
+      navigate('/food-partner/login')
+    }
+  }
+
   return (
     <div className="reels-page">
       {/* IG-like top header */}
@@ -115,11 +129,17 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.' 
           <img className="ig-brand-logo" src={LOGO_URL} alt="Foodgram logo" />
         </div>
         <div className="ig-actions">
-          <Link to="/create-food" className="ig-icon-btn" aria-label="Upload reel">
+          {/* Upload button now guarded */}
+          <button
+            type="button"
+            className="ig-icon-btn"
+            aria-label="Upload reel"
+            onClick={handleUploadClick}
+          >
             <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
               <path d="M12 5v14M5 12h14" />
             </svg>
-          </Link>
+          </button>
           <button className="ig-icon-btn" aria-label="Open menu" onClick={() => setSheetOpen(true)}>
             <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
               <path d="M3 6h18M3 12h18M3 18h18" />
