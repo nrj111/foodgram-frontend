@@ -172,7 +172,7 @@ const CreateFood = () => {
     const isDisabled = useMemo(() => !name.trim() || !videoFile || price === '' || Number.isNaN(Number(price)), [ name, videoFile, price ]); // <-- updated
 
     return (
-        <div className="create-food-page">
+        <div className="create-food-page fade-page" data-uploading={uploading ? 'true':'false'}>
             <div className="create-food-card">
                 <header className="create-food-header">
                     <h1 className="create-food-title">Create Food</h1>

@@ -17,6 +17,8 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   const [themePref, setThemePref] = useState(() =>
     (typeof window !== 'undefined' && localStorage.getItem('themePreference')) || 'system'
   )
+  const [liked, setLiked] = useState({})        // _id => true
+  const [saved, setSaved] = useState({})        // _id => true
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -172,6 +174,15 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     } catch {}
   }
 
+  function handleLike(item) {
+    setLiked(prev => ({ ...prev, [item._id]: !prev[item._id] }))
+    onLike && onLike(item)
+  }
+  function handleSave(item) {
+    setSaved(prev => ({ ...prev, [item._id]: !prev[item._id] }))
+    onSave && onSave(item)
+  }
+
   return (
     <div className="reels-page">
       {/* IG-like top header */}
@@ -228,11 +239,12 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
               <div className="reel-actions">
                 <div className="reel-action-group">
                   <button
-                    onClick={onLike ? () => onLike(item) : undefined}
-                    className="reel-action"
+                    onClick={onLike ? () => handleLike(item) : undefined}
+                    className={`reel-action like-action ${liked[item._id] ? 'is-liked' : ''}`}
                     aria-label="Like"
+                    aria-pressed={!!liked[item._id]}
                   >
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
                     </svg>
                   </button>
@@ -241,11 +253,12 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
 
                 <div className="reel-action-group">
                   <button
-                    className="reel-action"
-                    onClick={onSave ? () => onSave(item) : undefined}
+                    className={`reel-action save-action ${saved[item._id] ? 'is-saved' : ''}`}
+                    onClick={onSave ? () => handleSave(item) : undefined}
                     aria-label="Bookmark"
+                    aria-pressed={!!saved[item._id]}
                   >
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" />
                     </svg>
                   </button>

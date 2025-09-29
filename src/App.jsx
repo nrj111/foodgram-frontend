@@ -8,6 +8,16 @@ function App() {
   const [toasts, setToasts] = React.useState([]);
 
   React.useEffect(() => {
+    document.documentElement.classList.add('app-prep');
+    requestAnimationFrame(() => {
+      document.documentElement.classList.add('app-ready');
+    });
+    return () => {
+      document.documentElement.classList.remove('app-prep','app-ready');
+    };
+  }, []);
+
+  React.useEffect(() => {
     // simple global toast: window.toast('msg', { type: 'success'|'error' })
     window.toast = (message, opts = {}) => {
       const id = Date.now() + Math.random();

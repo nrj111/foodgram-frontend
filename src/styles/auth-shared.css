@@ -28,6 +28,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  animation: auth-in .5s cubic-bezier(.4,0,.2,1);
 }
 
 .auth-card header { text-align: center; }
@@ -251,4 +252,22 @@ body, .auth-card, .field-group input { transition: background 200ms ease, color 
 @keyframes auth-ring-fill {
   0%   { --progress: 0; }
   100% { --progress: 360; }
+}
+
+@keyframes auth-in {
+  from { opacity:0; transform: translateY(18px) scale(.98); }
+  to { opacity:1; transform: translateY(0) scale(1); }
+}
+
+.field-group input,
+.field-group textarea {
+  transition: border-color .25s ease, background .25s ease, box-shadow .25s ease, transform .35s cubic-bezier(.4,0,.2,1);
+}
+.field-group input:focus-visible,
+.field-group textarea:focus-visible { transform: translateY(-1px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-card { animation: none; }
+  .field-group input,
+  .field-group textarea { transition: none; }
 }

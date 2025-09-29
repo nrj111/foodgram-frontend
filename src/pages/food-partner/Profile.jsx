@@ -62,7 +62,7 @@ const Profile = () => {
     const totalSaves = videos.reduce((sum, v) => sum + (v.savesCount || 0), 0)
 
     return (
-        <main className="profile-page">
+        <main className="profile-page fade-page">
             {/* Instagram-like header */}
             <section className="profile-header ig-profile-header">
                 <div className="ig-profile-top">

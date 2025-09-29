@@ -70,7 +70,7 @@ const UserProfile = () => {
   const goUpload = () => navigate('/create-food') // fixed path
 
   return (
-    <main className="user-profile-page">
+    <main className="user-profile-page fade-page">
       {/* Partner action bar (Explore, Upload Reel) */}
       {!checkingRole && isPartner && (
         <nav className="partner-actions" aria-label="Partner actions" style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 16 }}>
