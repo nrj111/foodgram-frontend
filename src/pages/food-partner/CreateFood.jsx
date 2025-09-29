@@ -140,6 +140,19 @@ const CreateFood = () => {
             }
 
             if (response.status === 201) {
+                // NEW: capture created food id (various possible response shapes)
+                try {
+                  const newId =
+                    response.data?.food?._id ||
+                    response.data?.foodItem?._id ||
+                    response.data?.foodId ||
+                    response.data?.id ||
+                    response.data?._id;
+                  if (newId) {
+                    sessionStorage.setItem('recentUploadId', String(newId));
+                    sessionStorage.setItem('recentUploadTs', String(Date.now()));
+                  }
+                } catch {}
                 window.toast?.("Reel uploaded", { type: "success" });
                 navigate("/");
             } else {

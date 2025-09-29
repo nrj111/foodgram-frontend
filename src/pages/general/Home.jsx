@@ -16,7 +16,39 @@ const Home = () => {
     useEffect(() => {
         setLoading(true)
         axios.get(`${API_BASE}/api/food`)
-            .then(response => { setVideos(response.data.foodItems) })
+            .then(response => {
+                let items = response.data.foodItems || []
+
+                // Fisher-Yates shuffle for randomness each load
+                for (let i = items.length - 1; i > 0; i--) {
+                  const j = Math.floor(Math.random() * (i + 1))
+                  ;[items[i], items[j]] = [items[j], items[i]]
+                }
+
+                // Recent upload handling (partner just uploaded)
+                try {
+                  const recentId = sessionStorage.getItem('recentUploadId')
+                  if (recentId) {
+                    const found = items.find(v => v._id === recentId)
+                    if (found) {
+                      // show ONLY the newly uploaded reel once
+                      setVideos([found])
+                      // remove marker so a refresh gives random feed
+                      setTimeout(() => {
+                        sessionStorage.removeItem('recentUploadId')
+                        sessionStorage.removeItem('recentUploadTs')
+                      }, 0)
+                      return
+                    } else {
+                      // not found (propagation delay) -> fall back to random full list
+                      sessionStorage.removeItem('recentUploadId')
+                      sessionStorage.removeItem('recentUploadTs')
+                    }
+                  }
+                } catch {}
+
+                setVideos(items)
+            })
             .catch(() => { /* noop */ })
             .finally(() => setLoading(false))
     }, [API_BASE])
