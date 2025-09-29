@@ -19,6 +19,11 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   )
   const [liked, setLiked] = useState({})        // _id => true
   const [saved, setSaved] = useState({})        // _id => true
+  const [commentSheet, setCommentSheet] = useState({ open: false, foodId: null })
+  const [comments, setComments] = useState([])        // current list
+  const [commentText, setCommentText] = useState('')
+  const [loadingComments, setLoadingComments] = useState(false)
+  const [commentLikes, setCommentLikes] = useState({}) // commentId => true
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -183,6 +188,88 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     onSave && onSave(item)
   }
 
+  async function openComments(foodId) {
+    setCommentSheet({ open: true, foodId })
+    setComments([])
+    setLoadingComments(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/food/comments/${foodId}`, { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setComments(data.comments || [])
+        const likedMap = {}
+        data.comments?.forEach(c => { if (c.liked) likedMap[c._id] = true })
+        setCommentLikes(likedMap)
+      }
+    } catch {/* noop */} finally {
+      setLoadingComments(false)
+    }
+  }
+
+  function closeComments() {
+    setCommentSheet({ open: false, foodId: null })
+    setCommentText('')
+  }
+
+  async function submitComment(e) {
+    e.preventDefault()
+    if (!commentText.trim() || !commentSheet.foodId) return
+    const tempId = 'tmp_' + Date.now()
+    const optimistic = {
+      _id: tempId,
+      text: commentText.trim(),
+      likeCount: 0,
+      liked: false,
+      user: { name: profileName },
+      relTime: 'now'
+    }
+    setComments(prev => [optimistic, ...prev])
+    setCommentText('')
+    // increment local count on reel
+    // (shallow update—only visual)
+    try {
+      const res = await fetch(`${API_BASE}/api/food/comment`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ foodId: commentSheet.foodId, text: optimistic.text })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setComments(prev => prev.map(c => c._id === tempId ? data.comment : c))
+      } else {
+        setComments(prev => prev.filter(c => c._id !== tempId))
+        window.toast?.('Failed to post comment', { type: 'error' })
+      }
+    } catch {
+      setComments(prev => prev.filter(c => c._id !== tempId))
+      window.toast?.('Failed to post comment', { type: 'error' })
+    }
+  }
+
+  async function toggleCommentLike(comment) {
+    const id = comment._id
+    const optimisticLiked = !commentLikes[id]
+    setCommentLikes(prev => ({ ...prev, [id]: optimisticLiked }))
+    setComments(prev => prev.map(c => c._id === id
+      ? { ...c, likeCount: Math.max(0, (c.likeCount || 0) + (optimisticLiked ? 1 : -1)) }
+      : c))
+    try {
+      await fetch(`${API_BASE}/api/food/comment/like`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentId: id })
+      })
+    } catch {
+      // revert on failure
+      setCommentLikes(prev => ({ ...prev, [id]: !optimisticLiked }))
+      setComments(prev => prev.map(c => c._id === id
+        ? { ...c, likeCount: Math.max(0, (c.likeCount || 0) + (!optimisticLiked ? 1 : -1)) }
+        : c))
+    }
+  }
+
   return (
     <div className="reels-page">
       {/* IG-like top header */}
@@ -266,7 +353,11 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
                 </div>
 
                 <div className="reel-action-group">
-                  <button className="reel-action" aria-label="Comments">
+                  <button
+                    className="reel-action"
+                    aria-label="Comments"
+                    onClick={() => openComments(item._id)}
+                  >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
                     </svg>
@@ -472,6 +563,67 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
             )}
           </aside>
         </>
+      )}
+
+      {/* Comment sheet overlay */}
+      {commentSheet.open && (
+        <div className="comments-layer" role="dialog" aria-modal="true" aria-label="Comments">
+          <div className="comments-backdrop" onClick={closeComments} />
+          <div className="comments-panel">
+            <header className="comments-head">
+              <button className="comments-close" onClick={closeComments} aria-label="Close comments">✕</button>
+              <h2 className="comments-title">Comments</h2>
+            </header>
+            <div className="comments-scroll">
+              {loadingComments && <div className="comments-loading">Loading…</div>}
+              {!loadingComments && comments.length === 0 && (
+                <div className="comments-empty">No comments yet. Be first!</div>
+              )}
+              {!loadingComments && comments.map(c => {
+                const letter = (c.user?.name || 'U').trim().charAt(0).toUpperCase()
+                const liked = !!commentLikes[c._id]
+                return (
+                  <div key={c._id} className="comment-row">
+                    <div className="comment-avatar" aria-hidden="true">{letter}</div>
+                    <div className="comment-body">
+                      <div className="comment-meta">
+                        <span className="comment-user">{c.user?.name || 'User'}</span>
+                        <span className="comment-dot">•</span>
+                        <span className="comment-time">{c.relTime || ''}</span>
+                      </div>
+                      <p className="comment-text">{c.text}</p>
+                      <div className="comment-actions">
+                        <button
+                          type="button"
+                          className={`comment-like-btn ${liked ? 'is-liked' : ''}`}
+                          aria-label={liked ? 'Unlike comment' : 'Like comment'}
+                          aria-pressed={liked}
+                          onClick={() => toggleCommentLike(c)}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
+                          </svg>
+                          <span>{c.likeCount || 0}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <form className="comments-input-bar" onSubmit={submitComment}>
+              <input
+                type="text"
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                maxLength={500}
+                aria-label="Add a comment"
+              />
+              <button type="submit" disabled={!commentText.trim()} className="comments-send">Post</button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )
