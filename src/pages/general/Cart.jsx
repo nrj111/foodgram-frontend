@@ -86,7 +86,7 @@ const Cart = () => {
               <button className="btn-outline" onClick={clear}>Clear cart</button>
               <button className="btn-primary" onClick={checkout}>Proceed to checkout</button>
             </div>
-            <p className="summary-note">Prices are placeholders; integrate pricing from the backend when available.</p>
+            <p className="summary-note">Payment method id temporarily not available</p>
           </aside>
         </div>
       )}

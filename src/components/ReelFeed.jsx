@@ -13,6 +13,10 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   const [added, setAdded] = useState({}) // id => true for brief animation
   const [expanded, setExpanded] = useState({}) // id => true when description expanded
   const [following, setFollowing] = useState({}) // id => followed?
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [themePref, setThemePref] = useState(() =>
+    (typeof window !== 'undefined' && localStorage.getItem('themePreference')) || 'system'
+  )
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -57,9 +61,26 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     }
   }, [focusId, items])
 
+  useEffect(() => {
+    // Apply stored theme preference
+    function apply(pref) {
+      const root = document.documentElement
+      root.removeAttribute('data-theme')
+      if (pref === 'light') root.setAttribute('data-theme', 'light')
+      else if (pref === 'dark') root.setAttribute('data-theme', 'dark')
+    }
+    apply(themePref)
+  }, [themePref])
+
   const setVideoRef = (id) => (el) => {
     if (!el) { videoRefs.current.delete(id); return }
     videoRefs.current.set(id, el)
+  }
+
+  function updateTheme(pref) {
+    setThemePref(pref)
+    try { localStorage.setItem('themePreference', pref) } catch {}
+    window.toast?.(`Theme: ${pref}`, { type: 'info' })
   }
 
   async function handleLogout() {
@@ -132,6 +153,23 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     } catch {
       navigate('/food-partner/login')
     }
+  }
+
+  function clearCart() {
+    try { localStorage.removeItem('cart'); window.toast?.('Cart cleared', { type: 'success' }) } catch {}
+  }
+  function clearProfileCache() {
+    try {
+      ['profileName','profileEmail','avatarUrl','partnerAvatarUrl','profileType','partnerId']
+        .forEach(k => localStorage.removeItem(k))
+      window.toast?.('Local profile cache cleared', { type: 'success' })
+    } catch {}
+  }
+  function clearSavedLocal() {
+    try {
+      localStorage.removeItem('saved') // placeholder if used
+      window.toast?.('Saved (local) cleared', { type: 'success' })
+    } catch {}
   }
 
   return (
@@ -329,8 +367,10 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
       {/* Bottom-sheet menu */}
       {sheetOpen && (
         <>
-          <div className="sheet-backdrop" onClick={() => setSheetOpen(false)} aria-hidden="true" />
+          {/* ...existing profile sheet backdrop & panel... */}
+          <div className="sheet-backdrop" onClick={() => { setSheetOpen(false); setSettingsOpen(false) }} aria-hidden="true" />
           <aside className="sheet" role="dialog" aria-modal="true" aria-label="Profile menu">
+            {/* ...existing sheet-head... */}
             <header className="sheet-head">
               <div className="sheet-avatar" aria-hidden="true">
                 {avatarUrl
@@ -341,22 +381,82 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
                 <div className="sheet-name">{profileName}</div>
                 <div className="sheet-handle">{handle}</div>
               </div>
-              <button className="sheet-close" onClick={() => setSheetOpen(false)} aria-label="Close">✕</button>
+              <button className="sheet-close" onClick={() => { setSheetOpen(false); setSettingsOpen(false) }} aria-label="Close">✕</button>
             </header>
-            <nav className="sheet-items">
-              <Link to="/profile" className="sheet-item" onClick={() => setSheetOpen(false)}>Profile</Link>
-              <Link to="/create-food" className="sheet-item" onClick={() => setSheetOpen(false)}>Upload Reel</Link>
-              <Link to="/cart" className="sheet-item" onClick={() => setSheetOpen(false)}>Cart</Link>
-              <Link to="/saved" className="sheet-item" onClick={() => setSheetOpen(false)}>Saved</Link>
-              <button
-                type="button"
-                className="sheet-item"
-                onClick={() => { setSheetOpen(false); navigate('/profile'); }} // open settings -> profile
-              >
-                Settings
-              </button>
-              <button type="button" className="sheet-item danger" onClick={handleLogout}>Log out</button>
-            </nav>
+            {!settingsOpen && (
+              <nav className="sheet-items">
+                <Link to="/profile" className="sheet-item" onClick={() => setSheetOpen(false)}>Profile</Link>
+                <Link to="/create-food" className="sheet-item" onClick={() => setSheetOpen(false)}>Upload Reel</Link>
+                <Link to="/cart" className="sheet-item" onClick={() => setSheetOpen(false)}>Cart</Link>
+                <Link to="/saved" className="sheet-item" onClick={() => setSheetOpen(false)}>Saved</Link>
+                <button
+                  type="button"
+                  className="sheet-item sheet-item-settings"
+                  onClick={() => setSettingsOpen(true)}
+                  aria-label="Open settings"
+                >
+                  Settings
+                </button>
+                <button type="button" className="sheet-item danger" onClick={handleLogout}>Log out</button>
+              </nav>
+            )}
+
+            {settingsOpen && (
+              <div className="settings-panel" role="group" aria-label="Settings">
+                <div className="settings-head">
+                  <h2 className="settings-title">Settings</h2>
+                  <button
+                    type="button"
+                    className="settings-close-btn"
+                    aria-label="Back to menu"
+                    onClick={() => setSettingsOpen(false)}
+                  >←</button>
+                </div>
+
+                <div className="settings-section">
+                  <h3>Appearance</h3>
+                  <div className="settings-radio-group" role="radiogroup" aria-label="Theme">
+                    {['system','light','dark'].map(opt => (
+                      <label key={opt} className="settings-radio">
+                        <input
+                          type="radio"
+                          name="theme"
+                          value={opt}
+                          checked={themePref === opt}
+                          onChange={() => updateTheme(opt)}
+                        />
+                        <span className="settings-radio-label">{opt.charAt(0).toUpperCase()+opt.slice(1)}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="settings-section">
+                  <h3>Data</h3>
+                  <button type="button" className="settings-btn" onClick={clearCart}>Clear cart</button>
+                  <button type="button" className="settings-btn" onClick={clearSavedLocal}>Clear saved (local)</button>
+                  <button type="button" className="settings-btn" onClick={clearProfileCache}>Clear profile cache</button>
+                </div>
+
+                <div className="settings-section">
+                  <h3>Session</h3>
+                  <button type="button" className="settings-btn" onClick={handleLogout}>Logout</button>
+                </div>
+
+                <div className="settings-section danger-zone">
+                  <h3>Danger Zone</h3>
+                  <button
+                    type="button"
+                    className="settings-btn danger"
+                    onClick={() => {
+                      clearCart(); clearProfileCache(); handleLogout();
+                    }}
+                  >
+                    Reset & Logout
+                  </button>
+                </div>
+              </div>
+            )}
           </aside>
         </>
       )}

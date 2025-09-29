@@ -644,3 +644,152 @@
   50%  { --progress: 360; transform: rotate(180deg); }
   100% { --progress: 720; transform: rotate(360deg); }
 }
+
+/* Settings panel inside sheet */
+.sheet-item.sheet-item-settings {
+  font-weight: 600; /* improved font */
+  font-size: .92rem;
+}
+
+.settings-panel {
+  display: grid;
+  gap: 20px;
+  padding: 14px 14px 20px;
+  animation: settings-fade .18s ease;
+}
+
+@keyframes settings-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.settings-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settings-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: .4px;
+}
+.settings-close-btn {
+  margin-left: auto;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font: inherit;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background var(--transition-base), color var(--transition-base), transform var(--transition-base);
+}
+.settings-close-btn:hover { background: var(--color-surface); color: var(--color-text); }
+.settings-close-btn:active { transform: translateY(1px); }
+
+.settings-section {
+  display: grid;
+  gap: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 14px 14px 16px;
+  border-radius: 12px;
+}
+.settings-section h3 {
+  margin: 0 0 2px;
+  font-size: .8rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  font-weight: 700;
+}
+
+.settings-radio-group {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.settings-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-alt);
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  transition: background var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+}
+.settings-radio input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  position: relative;
+}
+.settings-radio input:checked {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+.settings-radio input:checked::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  display: block;
+}
+.settings-radio:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.settings-radio-label { line-height: 1; }
+
+.settings-btn {
+  text-align: left;
+  width: 100%;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background var(--transition-base), color var(--transition-base), transform var(--transition-base);
+}
+.settings-btn:hover { background: var(--color-surface); transform: translateY(-1px); }
+.settings-btn:active { transform: translateY(0); }
+.settings-btn.danger {
+  background: color-mix(in srgb, var(--color-danger) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+  color: var(--color-danger);
+}
+.settings-btn.danger:hover {
+  background: color-mix(in srgb, var(--color-danger) 28%, transparent);
+}
+
+.danger-zone {
+  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+}
+
+/* Manual theme override hooks */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
