@@ -75,6 +75,7 @@
   font-weight: 600;
   transition: color var(--transition-base), transform var(--transition-base);
   -webkit-tap-highlight-color: transparent;
+  padding-bottom: 10px; /* create space for underline */
 }
 
 .bottom-nav__item:active { transform: scale(.95); }
@@ -96,6 +97,7 @@
   font-weight: 700;
   text-transform: uppercase;
   opacity: .85;
+  margin-bottom: 4px; /* lift label above underline */
 }
 
 .bottom-nav__item.is-active .bottom-nav__label {
@@ -104,33 +106,36 @@
 
 .bottom-nav__underline {
   position: absolute;
-  top: 4px;
   left: 50%;
-  width: 10px;
-  height: 10px;
-  margin-left: -5px;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
-  border-radius: 50%;
+  bottom: 3px;
+  width: 18px;
+  height: 3px;
+  margin-left: -9px;
+  border-radius: 4px;
+  background:
+    linear-gradient(135deg,
+      var(--color-accent),
+      var(--color-accent-hover));
   box-shadow:
-    0 0 0 2px rgba(255,255,255,.15),
-    0 4px 10px -2px color-mix(in srgb, var(--color-accent) 70%, transparent),
-    0 8px 18px -4px color-mix(in srgb, var(--color-accent-hover) 55%, transparent);
+    0 1px 3px rgba(0,0,0,.35),
+    0 0 0 1px rgba(255,255,255,.15);
+  transform: scale(0.35);
   opacity: 0;
-  transform: translateY(-4px) scale(.3);
-  transition: opacity .35s ease, transform .45s cubic-bezier(.4,0,.2,1);
+  transform-origin: center;
+  transition: transform .38s cubic-bezier(.6,0,.2,1), opacity .28s ease;
   pointer-events: none;
 }
 
 .bottom-nav__item.is-active .bottom-nav__underline {
+  transform: scale(1);
   opacity: 1;
-  transform: translateY(0) scale(1);
 }
 
-/* Remove old hover growth effect */
+/* Hover emphasis (non-touch) */
 @media (hover:hover) {
   .bottom-nav__item:not(.is-active):hover .bottom-nav__underline {
-    opacity: .4;
-    transform: translateY(0) scale(.6);
+    transform: scale(.55);
+    opacity: .55;
   }
 }
 
@@ -180,10 +185,6 @@
 }
 
 @supports (padding: max(0px)) {
-  .bottom-nav {
-    padding-bottom: calc(max(env(safe-area-inset-bottom), 0px));
-  }
-}
   .bottom-nav {
     padding-bottom: calc(max(env(safe-area-inset-bottom), 0px));
   }

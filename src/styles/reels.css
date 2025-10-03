@@ -1106,14 +1106,60 @@
   transform: translateY(0);
 }
 
-.reel-action.audio-action.is-on {
-  background: linear-gradient(145deg, var(--color-accent) 0%, var(--color-accent-hover) 90%);
-  border-color: color-mix(in srgb, var(--color-accent) 60%, rgba(255,255,255,.2));
+/* Audio toggle action */
+.reel-action.audio-action {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, #000 35%, transparent);
+  backdrop-filter: blur(2px);
   color: #fff;
-  box-shadow:
-    0 0 0 2px rgba(255,255,255,.07),
-    0 6px 16px -6px color-mix(in srgb, var(--color-accent) 70%, transparent),
-    0 12px 30px -10px color-mix(in srgb, var(--color-accent-hover) 55%, transparent);
-  animation: save-pulse .5s ease;
+  border: 1px solid rgba(255,255,255,.15);
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition-base), background var(--transition-base), box-shadow var(--transition-base);
 }
-.reel-action.audio-action.is-on svg path { stroke: currentColor; }
+
+.reel-action.audio-action:hover {
+  background: color-mix(in srgb, #000 45%, transparent);
+  transform: translateY(-1px);
+}
+
+.reel-action.audio-action:active {
+  transform: translateY(1px);
+}
+
+/* Active state for audio toggle */
+.reel-action.audio-action.is-on {
+  background: radial-gradient(circle at 30% 30%, var(--color-accent), var(--color-accent-hover) 70%);
+  border-color: color-mix(in srgb, var(--color-accent) 55%, rgba(255,255,255,.25));
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.05),
+    0 6px 14px -4px color-mix(in srgb, var(--color-accent) 60%, transparent),
+    0 10px 26px -6px color-mix(in srgb, var(--color-accent-hover) 55%, transparent);
+  color: #fff;
+  animation: audio-pop .5s cubic-bezier(.5,1.6,.4,1);
+}
+@keyframes audio-pop {
+  0% { transform: scale(.7); }
+  40% { transform: scale(1.15); }
+  70% { transform: scale(.94); }
+  100% { transform: scale(1); }
+}
+
+/* Indicator subtle pulse when sound on */
+.reel-action.audio-action.is-on::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.35), transparent 65%);
+  opacity:0;
+  animation: audio-shine 1.2s ease .2s;
+}
+@keyframes audio-shine {
+  0% { opacity:0; transform: scale(.6); }
+  30% { opacity:.9; transform: scale(1); }
+  100% { opacity:0; transform: scale(1.3); }
+}

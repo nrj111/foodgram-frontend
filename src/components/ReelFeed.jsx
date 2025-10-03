@@ -24,7 +24,8 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   const [commentText, setCommentText] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
   const [commentLikes, setCommentLikes] = useState({}) // commentId => true
-  const [currentAudioId, setCurrentAudioId] = useState(null) // which reel is unmuted
+  const [muted, setMuted] = useState({})            // _id => true (default)
+  const [hasAudio, setHasAudio] = useState({})      // _id => boolean
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -83,6 +84,39 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   const setVideoRef = (id) => (el) => {
     if (!el) { videoRefs.current.delete(id); return }
     videoRefs.current.set(id, el)
+    // ensure default muted state
+    setMuted(prev => prev[id] === undefined ? { ...prev, [id]: true } : prev)
+  }
+
+  function detectAudio(el) {
+    try {
+      const present =
+        el.mozHasAudio ||
+        Boolean(el.webkitAudioDecodedByteCount) ||
+        (el.audioTracks && el.audioTracks.length > 0) ||
+        (el.captureStream && el.captureStream()?.getAudioTracks()?.length > 0)
+      return !!present
+    } catch { return false }
+  }
+
+  function handleLoadedMeta(id) {
+    const vid = videoRefs.current.get(id)
+    if (vid) {
+      setHasAudio(prev => ({ ...prev, [id]: detectAudio(vid) }))
+    }
+  }
+
+  function toggleAudio(id) {
+    setMuted(prev => {
+      const next = !prev[id]
+      // user gesture -> try play with sound
+      const vid = videoRefs.current.get(id)
+      if (vid) {
+        vid.muted = !vid.muted
+        if (!vid.muted) vid.play?.().catch(()=>{})
+      }
+      return { ...prev, [id]: next === undefined ? false : next }
+    })
   }
 
   function updateTheme(pref) {
@@ -271,22 +305,6 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     }
   }
 
-  useEffect(() => {
-    // enforce single audio source
-    videoRefs.current.forEach((vid, id) => {
-      if (!(vid instanceof HTMLVideoElement)) return
-      const shouldMute = currentAudioId !== id
-      if (vid.muted !== shouldMute) vid.muted = shouldMute
-      if (!shouldMute) {
-        vid.play().catch(()=>{}) // try play with sound
-      }
-    })
-  }, [currentAudioId])
-
-  function toggleAudio(id) {
-    setCurrentAudioId(prev => prev === id ? null : id)
-  }
-
   return (
     <div className="reels-page">
       {/* IG-like top header */}
@@ -332,40 +350,16 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
               ref={setVideoRef(item._id)}
               className="reel-video"
               src={item.video}
-              // muted handled by effect (ensure attr initially for autoplay)
-              muted={currentAudioId !== item._id}
+              muted={!!muted[item._id]}
               playsInline
               loop
               preload="metadata"
+              onLoadedMetadata={() => handleLoadedMeta(item._id)}
             />
 
             <div className="reel-overlay">
               <div className="reel-overlay-gradient" aria-hidden="true" />
               <div className="reel-actions">
-                {/* Audio toggle */}
-                <div className="reel-action-group">
-                  <button
-                    className={`reel-action audio-action ${currentAudioId === item._id ? 'is-on' : ''}`}
-                    aria-label={currentAudioId === item._id ? 'Mute audio' : 'Unmute audio'}
-                    aria-pressed={currentAudioId === item._id}
-                    onClick={() => toggleAudio(item._id)}
-                  >
-                    {currentAudioId === item._id ? (
-                      <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
-                        <path d="M11 5 6 9H3v6h3l5 4V5z" />
-                        <path d="m16 9 5 6M21 9l-5 6" />
-                      </svg>
-                    ) : (
-                      <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
-                        <path d="M11 5 6 9H3v6h3l5 4V5z" />
-                        <path d="M15 9a4 4 0 0 1 0 6" />
-                        <path d="M17.5 6.5a7 7 0 0 1 0 11" />
-                      </svg>
-                    )}
-                  </button>
-                  <div className="reel-action__count" style={{opacity:0}}>.</div>
-                </div>
-                {/* Existing like/save/comment groups remain below */}
                 <div className="reel-action-group">
                   <button
                     onClick={onLike ? () => handleLike(item) : undefined}
@@ -406,6 +400,28 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
                   </button>
                   <div className="reel-action__count">{item.commentsCount ?? (Array.isArray(item.comments) ? item.comments.length : 0)}</div>
                 </div>
+
+                {hasAudio[item._id] && (
+                  <div className="reel-action-group">
+                    <button
+                      className={`reel-action audio-action ${!muted[item._id] ? 'is-on' : ''}`}
+                      aria-label={muted[item._id] ? 'Unmute' : 'Mute'}
+                      aria-pressed={!muted[item._id]}
+                      onClick={() => toggleAudio(item._id)}
+                    >
+                      {muted[item._id] ? (
+                        <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
+                          <path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="m18 9-4 4"/><path d="m14 9 4 4"/>
+                        </svg>
+                      ) : (
+                        <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
+                          <path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M16 8.82a4 4 0 0 1 0 6.36"/><path d="M18.8 6a8 8 0 0 1 0 12"/>
+                        </svg>
+                      )}
+                    </button>
+                    <div className="reel-action__count" aria-hidden="true">{!muted[item._id] ? 'On' : 'Off'}</div>
+                  </div>
+                )}
               </div>
 
               <div className="reel-content">
