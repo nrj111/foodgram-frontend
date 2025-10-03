@@ -1105,3 +1105,15 @@
 .comments-send:not(:disabled):active {
   transform: translateY(0);
 }
+
+.reel-action.audio-action.is-on {
+  background: linear-gradient(145deg, var(--color-accent) 0%, var(--color-accent-hover) 90%);
+  border-color: color-mix(in srgb, var(--color-accent) 60%, rgba(255,255,255,.2));
+  color: #fff;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.07),
+    0 6px 16px -6px color-mix(in srgb, var(--color-accent) 70%, transparent),
+    0 12px 30px -10px color-mix(in srgb, var(--color-accent-hover) 55%, transparent);
+  animation: save-pulse .5s ease;
+}
+.reel-action.audio-action.is-on svg path { stroke: currentColor; }

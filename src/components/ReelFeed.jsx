@@ -24,6 +24,7 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   const [commentText, setCommentText] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
   const [commentLikes, setCommentLikes] = useState({}) // commentId => true
+  const [currentAudioId, setCurrentAudioId] = useState(null) // which reel is unmuted
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -270,6 +271,22 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     }
   }
 
+  useEffect(() => {
+    // enforce single audio source
+    videoRefs.current.forEach((vid, id) => {
+      if (!(vid instanceof HTMLVideoElement)) return
+      const shouldMute = currentAudioId !== id
+      if (vid.muted !== shouldMute) vid.muted = shouldMute
+      if (!shouldMute) {
+        vid.play().catch(()=>{}) // try play with sound
+      }
+    })
+  }, [currentAudioId])
+
+  function toggleAudio(id) {
+    setCurrentAudioId(prev => prev === id ? null : id)
+  }
+
   return (
     <div className="reels-page">
       {/* IG-like top header */}
@@ -315,7 +332,8 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
               ref={setVideoRef(item._id)}
               className="reel-video"
               src={item.video}
-              muted
+              // muted handled by effect (ensure attr initially for autoplay)
+              muted={currentAudioId !== item._id}
               playsInline
               loop
               preload="metadata"
@@ -324,6 +342,30 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
             <div className="reel-overlay">
               <div className="reel-overlay-gradient" aria-hidden="true" />
               <div className="reel-actions">
+                {/* Audio toggle */}
+                <div className="reel-action-group">
+                  <button
+                    className={`reel-action audio-action ${currentAudioId === item._id ? 'is-on' : ''}`}
+                    aria-label={currentAudioId === item._id ? 'Mute audio' : 'Unmute audio'}
+                    aria-pressed={currentAudioId === item._id}
+                    onClick={() => toggleAudio(item._id)}
+                  >
+                    {currentAudioId === item._id ? (
+                      <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
+                        <path d="M11 5 6 9H3v6h3l5 4V5z" />
+                        <path d="m16 9 5 6M21 9l-5 6" />
+                      </svg>
+                    ) : (
+                      <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
+                        <path d="M11 5 6 9H3v6h3l5 4V5z" />
+                        <path d="M15 9a4 4 0 0 1 0 6" />
+                        <path d="M17.5 6.5a7 7 0 0 1 0 11" />
+                      </svg>
+                    )}
+                  </button>
+                  <div className="reel-action__count" style={{opacity:0}}>.</div>
+                </div>
+                {/* Existing like/save/comment groups remain below */}
                 <div className="reel-action-group">
                   <button
                     onClick={onLike ? () => handleLike(item) : undefined}
