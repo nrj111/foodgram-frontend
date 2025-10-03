@@ -227,6 +227,11 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     } catch {}
   }
 
+  function updateTheme(pref) {
+    setThemePref(pref)
+    try { localStorage.setItem('themePreference', pref) } catch {}
+  }
+
   function handleLike(item) {
     setLiked(prev => ({ ...prev, [item._id]: !prev[item._id] }))
     onLike && onLike(item)
@@ -800,47 +805,5 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     </div>
   )
 }
-
-
-export default ReelFeed
-export default ReelFeed
-                      <p className="comment-text">{c.text}</p>
-                      <div className="comment-actions">
-                        <button
-                          type="button"
-                          className={`comment-like-btn ${liked ? 'is-liked' : ''}`}
-                          aria-label={liked ? 'Unlike comment' : 'Like comment'}
-                          aria-pressed={liked}
-                          onClick={() => toggleCommentLike(c)}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
-                          </svg>
-                          <span>{c.likeCount || 0}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <form className="comments-input-bar" onSubmit={submitComment}>
-              <input
-                type="text"
-                placeholder="Add a comment..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                maxLength={500}
-                aria-label="Add a comment"
-              />
-              <button type="submit" disabled={!commentText.trim()} className="comments-send">Post</button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 
 export default ReelFeed
