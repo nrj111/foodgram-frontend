@@ -295,6 +295,20 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
     }
   }
 
+  // NEW: missing delete handler (fix for delete button error)
+  async function handleDelete(item) {
+    if (!onDelete) return
+    if (!window.confirm('Delete this reel? This action cannot be undone.')) return
+    const result = await onDelete(item)
+    if (!result?.ok) {
+      if (result?.unauthorized) {
+        window.toast?.('Not authorized', { type: 'error' })
+      } else {
+        window.toast?.('Delete failed', { type: 'error' })
+      }
+    }
+  }
+
   async function openComments(foodId) {
     setCommentSheet({ open: true, foodId })
     setComments([])
