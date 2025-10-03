@@ -232,26 +232,37 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     try { localStorage.setItem('themePreference', pref) } catch {}
   }
 
-  // Initialize liked/saved from localStorage + items provided
+  // Initialize liked/saved from server user flags + localStorage (no inference from counts)
   useEffect(() => {
     try {
-      const likedSet = new Set(JSON.parse(localStorage.getItem('likedLocal') || '[]'))
-      const savedSet = new Set(JSON.parse(localStorage.getItem('savedLocal') || '[]'))
-      setLiked(prev => {
-        const next = { ...prev }
-        items.forEach(i => { if (likedSet.has(i._id)) next[i._id] = true })
+      const likedSetLocal = new Set(JSON.parse(localStorage.getItem('likedLocal') || '[]'))
+      const savedSetLocal = new Set(JSON.parse(localStorage.getItem('savedLocal') || '[]'))
+
+      setLiked(() => {
+        const next = {}
+        items.forEach(i => {
+          if (i?.liked === true || likedSetLocal.has(i._id)) next[i._id] = true
+        })
         return next
       })
-      setSaved(prev => {
-        const next = { ...prev }
+
+      setSaved(() => {
+        const next = {}
         if (allSaved) {
+          // Saved page: everything here is explicitly saved for this user
           items.forEach(i => { next[i._id] = true })
         } else {
-          items.forEach(i => { if (savedSet.has(i._id)) next[i._id] = true })
+          items.forEach(i => {
+            if (i?.saved === true || savedSetLocal.has(i._id)) next[i._id] = true
+          })
         }
         return next
       })
-    } catch {}
+    } catch {
+      // fallback: clear states (unfilled icons)
+      setLiked({})
+      setSaved(prev => (allSaved ? prev : {}))
+    }
   }, [items, allSaved])
 
   async function handleLike(item) {
