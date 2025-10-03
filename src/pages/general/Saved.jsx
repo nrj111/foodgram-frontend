@@ -68,6 +68,10 @@ const Saved = () => {
     }, [API_BASE]) // fixed: add dependency array
 
     const likeVideo = async (item) => {
+        if (localStorage.getItem('profileType') !== 'user') {
+            window.toast?.('Sign in as a user to like reels', { type: 'info' })
+            return { ok: false, unauthorized: true }
+        }
         try {
             const { data } = await axios.post(`${API_BASE}/api/food/like`, { foodId: item._id }, { withCredentials: true })
             const liked = !!data.liked
@@ -80,13 +84,21 @@ const Saved = () => {
               localStorage.setItem('likedLocal', JSON.stringify(Array.from(set)))
             } catch {}
             return { ok: true, liked, likeCount }
-        } catch {
+        } catch (err) {
+            if (err?.response?.status === 401) {
+                window.toast?.('Session expired. Please sign in again.', { type: 'warning' })
+                return { ok: false, unauthorized: true }
+            }
             window.toast?.('Like failed', { type: 'error' })
             return { ok: false }
         }
     }
 
     const removeSaved = async (item) => {
+        if (localStorage.getItem('profileType') !== 'user') {
+            window.toast?.('Sign in as a user to save reels', { type: 'info' })
+            return { ok: false, unauthorized: true }
+        }
         try {
             const { data } = await axios.post(`${API_BASE}/api/food/save`, { foodId: item._id }, { withCredentials: true })
             const saved = !!data.saved
@@ -106,7 +118,11 @@ const Saved = () => {
               window.dispatchEvent(new CustomEvent('saved:count', { detail: arr.length }))
             } catch {}
             return { ok: true, saved, savesCount }
-        } catch {
+        } catch (err) {
+            if (err?.response?.status === 401) {
+                window.toast?.('Session expired. Please sign in again.', { type: 'warning' })
+                return { ok: false, unauthorized: true }
+            }
             window.toast?.('Failed to update saved state', { type: 'error' })
             return { ok: false }
         }

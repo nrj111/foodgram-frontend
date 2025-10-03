@@ -259,8 +259,10 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     setLiked(p => ({ ...p, [item._id]: optimistic }))
     const result = await (onLike ? onLike(item) : Promise.resolve({ ok: true, liked: optimistic }))
     if (!result.ok) {
-      // revert
       setLiked(p => ({ ...p, [item._id]: !optimistic }))
+      if (result.unauthorized) {
+        navigate('/user/login')
+      }
     } else if (typeof result.liked === 'boolean') {
       setLiked(p => ({ ...p, [item._id]: result.liked }))
     }
@@ -272,11 +274,12 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     const result = await (onSave ? onSave(item) : Promise.resolve({ ok: true, saved: optimistic }))
     if (!result.ok) {
       setSaved(p => ({ ...p, [item._id]: !optimistic }))
+      if (result.unauthorized) {
+        navigate('/user/login')
+      }
     } else if (typeof result.saved === 'boolean') {
       setSaved(p => ({ ...p, [item._id]: result.saved }))
-      if (result.saved) {
-        window.toast?.('Reel saved', { type: 'success' })
-      }
+      if (result.saved) window.toast?.('Reel saved', { type: 'success' })
     }
   }
 
