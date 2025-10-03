@@ -64,11 +64,23 @@ const Home = () => {
 
     async function saveVideo(item) {
         const response = await axios.post(`${API_BASE}/api/food/save`, { foodId: item._id }, { withCredentials: true })
-        if (response.data.save) {
-            setVideos(prev => prev.map(v => v._id === item._id ? { ...v, savesCount: v.savesCount + 1 } : v))
-        } else {
-            setVideos(prev => prev.map(v => v._id === item._id ? { ...v, savesCount: v.savesCount - 1 } : v))
-        }
+        const isNowSaved = !!response.data.saved || !!response.data.save
+        // update counts optimistically
+        setVideos(prev => prev.map(v => v._id === item._id
+          ? { ...v, savesCount: v.savesCount + (isNowSaved ? 1 : -1) }
+          : v))
+
+        // maintain local saved cache (fallback for /saved page when API returns empty)
+        try {
+          const raw = localStorage.getItem('savedLocal')
+          const set = new Set(raw ? JSON.parse(raw) : [])
+          if (isNowSaved) set.add(item._id)
+          else set.delete(item._id)
+          const arr = Array.from(set)
+          localStorage.setItem('savedLocal', JSON.stringify(arr))
+          // notify bottom nav & other listeners
+          window.dispatchEvent(new CustomEvent('saved:count', { detail: arr.length }))
+        } catch {}
     }
 
     // Signed-out detection (local, fast)

@@ -24,8 +24,7 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   const [commentText, setCommentText] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
   const [commentLikes, setCommentLikes] = useState({}) // commentId => true
-  const [muted, setMuted] = useState({})              // per-reel: true = muted, false = unmuted
-  const [globalAudioEnabled, setGlobalAudioEnabled] = useState(false)
+  const [muted, setMuted] = useState({})              // per-reel: true = muted, false = unmuted (default now false)
   const [noAudioNotified, setNoAudioNotified] = useState({})
   const [manualPaused, setManualPaused] = useState({}) // id => true if user paused
   const [shareFlash, setShareFlash] = useState({})     // id => true right after share
@@ -45,12 +44,23 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
       entries => {
         entries.forEach(entry => {
           const video = entry.target
-            // skip if manually paused
           if (!(video instanceof HTMLVideoElement)) return
           const id = video.dataset.id
           const isManuallyPaused = id && manualPaused[id]
           if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
-            if (!isManuallyPaused) video.play().catch(()=>{})
+            if (!isManuallyPaused) {
+              const p = video.play()
+              if (p && p.catch) {
+                p.catch(err => {
+                  if (!video.muted) {
+                    // Autoplay with sound blocked: fallback to muted then retry
+                    video.muted = true
+                    setMuted(prev => ({ ...prev, [id]: true }))
+                    video.play().catch(()=>{})
+                  }
+                })
+              }
+            }
           } else {
             video.pause()
           }
@@ -86,73 +96,24 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     apply(themePref)
   }, [themePref])
 
-  useEffect(() => {
-    function firstInteract() {
-      if (globalAudioEnabled) return
-      setGlobalAudioEnabled(true)
-      requestAnimationFrame(() => {
-        let targetId = null
-        videoRefs.current.forEach((v, id) => {
-          try {
-            const r = v.getBoundingClientRect()
-            const vis = Math.max(0, Math.min(window.innerHeight, r.bottom) - Math.max(0, r.top))
-            const ratio = vis / Math.max(1, r.height)
-            if (ratio >= 0.55 && !targetId) targetId = id
-          } catch {}
-        })
-        if (targetId) {
-          const vid = videoRefs.current.get(targetId)
-          if (vid) {
-            vid.muted = false
-            vid.play?.().catch(()=>{})
-            setMuted(prev => ({ ...prev, [targetId]: false }))
-          }
-        }
-      })
-      window.removeEventListener('pointerdown', firstInteract, true)
-      window.removeEventListener('keydown', firstInteract, true)
-    }
-    window.addEventListener('pointerdown', firstInteract, true)
-    window.addEventListener('keydown', firstInteract, true)
-    return () => {
-      window.removeEventListener('pointerdown', firstInteract, true)
-      window.removeEventListener('keydown', firstInteract, true)
-    }
-  }, [globalAudioEnabled])
-
   const setVideoRef = id => el => {
     if (!el) { videoRefs.current.delete(id); return }
     el.dataset.id = id
     videoRefs.current.set(id, el)
-    setMuted(prev => prev[id] === undefined
-      ? { ...prev, [id]: globalAudioEnabled ? false : true }
-      : prev)
+    // default: unmuted (audible)
+    setMuted(prev => prev[id] === undefined ? { ...prev, [id]: false } : prev)
   }
 
   function toggleAudio(id) {
     const vid = videoRefs.current.get(id)
     setMuted(prev => {
-      const current = prev[id] ?? true
+      const current = prev[id] ?? false
       const next = !current
       if (vid) {
         vid.muted = next
-        // Force a quick play attempt to ensure audio state applies (some browsers need gesture->play)
         if (!next) {
           const p = vid.play?.()
           if (p && p.catch) p.catch(()=>{})
-        }
-        // Heuristic audio track notice
-        if (!next) {
-          try {
-            const hasTrack = (vid.audioTracks && vid.audioTracks.length > 0) ||
-              vid.mozHasAudio ||
-              Boolean(vid.webkitAudioDecodedByteCount) ||
-              (vid.captureStream && vid.captureStream()?.getAudioTracks()?.length > 0)
-            if (!hasTrack && !noAudioNotified[id]) {
-              window.toast?.('No audio track for this reel', { type: 'info' })
-              setNoAudioNotified(n => ({ ...n, [id]: true }))
-            }
-          } catch {}
         }
       }
       return { ...prev, [id]: next }
@@ -471,16 +432,14 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
               ref={setVideoRef(item._id)}
               className="reel-video"
               src={item.video}
-              muted={muted[item._id] !== false}
+              muted={!!muted[item._id]}
               playsInline
               loop
               preload="metadata"
+              // clicking video pauses/plays only; does not affect mute
               onClick={() => togglePause(item._id)}
               onKeyDown={e => {
-                if (e.key === ' ' || e.key === 'Enter') {
-                  e.preventDefault()
-                  togglePause(item._id)
-                }
+                if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); togglePause(item._id) }
               }}
               tabIndex={0}
             />
@@ -804,6 +763,47 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
                         <span className="comment-dot">•</span>
                         <span className="comment-time">{c.relTime || ''}</span>
                       </div>
+                      <p className="comment-text">{c.text}</p>
+                      <div className="comment-actions">
+                        <button
+                          type="button"
+                          className={`comment-like-btn ${liked ? 'is-liked' : ''}`}
+                          aria-label={liked ? 'Unlike comment' : 'Like comment'}
+                          aria-pressed={liked}
+                          onClick={() => toggleCommentLike(c)}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
+                          </svg>
+                          <span>{c.likeCount || 0}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <form className="comments-input-bar" onSubmit={submitComment}>
+              <input
+                type="text"
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                maxLength={500}
+                aria-label="Add a comment"
+              />
+              <button type="submit" disabled={!commentText.trim()} className="comments-send">Post</button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+export default ReelFeed
+export default ReelFeed
                       <p className="comment-text">{c.text}</p>
                       <div className="comment-actions">
                         <button
