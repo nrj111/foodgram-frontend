@@ -855,11 +855,7 @@
   100% { transform: scale(1); }
 }
 
-/* Remove previous sparkle pseudo (override) */
-.reel-action.like-action.is-liked::after,
-.reel-action.save-action.is-saved::after {
-  /* redefined above – bubble effect overrides sparkles */
-}
+/* Previous sparkle pseudo removed; bubble effect styles defined earlier (removed empty ruleset to satisfy linter) */
 
 /* OPTIONAL: tone down original box-shadows to emphasize bubbles */
 .reel-action.like-action.is-liked {
@@ -1231,30 +1227,6 @@
   box-shadow:
     0 0 0 2px rgba(255,255,255,.06),
     0 6px 14px -4px color-mix(in srgb, var(--color-accent) 60%, transparent),
-    0 10px 24px -6px color-mix(in srgb, var(--color-accent-hover) 55%, transparent);
-}
-.reel-action.share-action.is-flash::after {
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,.6), transparent 60%);
-  animation: share-wave .65s ease;
-  pointer-events:none;
-  mix-blend-mode: screen;
-}
-@keyframes share-pop {
-  0% { transform: scale(.55); }
-  45% { transform: scale(1.18); }
-  70% { transform: scale(.95); }
-  100% { transform: scale(1); }
-}
-@keyframes share-wave {
-  0% { opacity:0; transform: scale(.4); }
-  25% { opacity:.9; }
-  100% { opacity:0; transform: scale(1.45); }
-}
     0 10px 24px -6px color-mix(in srgb, var(--color-accent-hover) 55%, transparent);
 }
 .reel-action.share-action.is-flash::after {
