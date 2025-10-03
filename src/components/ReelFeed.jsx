@@ -24,9 +24,10 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   const [commentText, setCommentText] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
   const [commentLikes, setCommentLikes] = useState({}) // commentId => true
-  const [muted, setMuted] = useState({})              // per-reel mute flag (true = muted)
+  const [muted, setMuted] = useState({})              // per-reel mute
   const [globalAudioEnabled, setGlobalAudioEnabled] = useState(false) // first user gesture unlock
   const [noAudioNotified, setNoAudioNotified] = useState({}) // reelId => notified once
+  const [paused, setPaused] = useState({})            // NEW: per-reel paused flag
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -116,28 +117,27 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   const setVideoRef = (id) => (el) => {
     if (!el) { videoRefs.current.delete(id); return }
     videoRefs.current.set(id, el)
-    setMuted(prev => prev[id] === undefined
-      ? { ...prev, [id]: globalAudioEnabled ? false : true }
-      : prev)
+    setMuted(prev => prev[id] === undefined ? { ...prev, [id]: true } : prev)
   }
 
   function toggleAudio(id) {
     const vid = videoRefs.current.get(id)
     setMuted(prev => {
-      const nextMuted = !prev[id]
+      const currentMuted = prev[id] !== false // treat undefined as muted
+      const nextMuted = !currentMuted
       if (vid) {
         vid.muted = nextMuted
         if (!nextMuted) {
           vid.play?.().catch(()=>{})
-          // Try to detect missing audio AFTER unmute attempt
           try {
-            const hasTrack = (vid.audioTracks && vid.audioTracks.length > 0)
-              || vid.mozHasAudio
-              || Boolean(vid.webkitAudioDecodedByteCount)
-              || (vid.captureStream && vid.captureStream()?.getAudioTracks()?.length > 0)
+            const hasTrack =
+              (vid.audioTracks && vid.audioTracks.length > 0) ||
+              vid.mozHasAudio ||
+              Boolean(vid.webkitAudioDecodedByteCount) ||
+              (vid.captureStream && vid.captureStream()?.getAudioTracks()?.length > 0)
             if (!hasTrack && !noAudioNotified[id]) {
               window.toast?.('No audio track for this reel', { type: 'info' })
-              setNoAudioNotified(n => ({ ...n, [id]: true }))
+              setNoAudioNotified(m => ({ ...m, [id]: true }))
             }
           } catch {}
         }
@@ -146,185 +146,20 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     })
   }
 
-  async function handleLogout() {
-    try {
-      await Promise.allSettled([
-        fetch(`${API_BASE}/api/auth/user/logout`, { credentials: 'include' }),
-        fetch(`${API_BASE}/api/auth/foodPartner/logout`, { credentials: 'include' }),
-      ])
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
-    // clear cookies client-side (works even if server typo)
-    document.cookie = 'userToken=; Max-Age=0; path=/;'
-    document.cookie = 'partnerToken=; Max-Age=0; path=/;'
-    document.cookie = 'token=; Max-Age=0; path=/;'
-    // clear local profile cache
-    try {
-      localStorage.removeItem('profileName')
-      localStorage.removeItem('profileEmail')
-      localStorage.removeItem('avatarUrl')
-      localStorage.removeItem('profileType')
-    } catch {
-      console.error('Failed to clear localStorage during logout')
-    }
-    window.toast?.('Logged out', { type: 'success' })
-    setSheetOpen(false)
-    navigate('/user/login')
-  }
-
-  function addToCart(item) {
-    try {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      const idx = cart.findIndex((x) => x._id === item._id)
-      const toStore = {
-        _id: item._id,
-        name: item.name || 'Food item',
-        description: item.description || '',
-        video: item.video,
-        price: item.price ?? 0,
-        qty: 1,
-      }
-      if (idx >= 0) cart[idx].qty = (cart[idx].qty || 0) + 1
-      else cart.push(toStore)
-      localStorage.setItem('cart', JSON.stringify(cart))
-      window.toast?.('Added to cart', { type: 'success' })
-      setAdded(prev => ({ ...prev, [item._id]: true }))
-      setTimeout(() => setAdded(prev => {
-        const next = { ...prev }; delete next[item._id]; return next
-      }), 1200)
-    } catch (e) {
-      console.error('Cart error:', e)
-      window.toast?.('Failed to add to cart', { type: 'error' })
+  function handleVideoClick(id) {
+    const vid = videoRefs.current.get(id)
+    if (!vid) return
+    if (vid.paused) {
+      vid.play().catch(()=>{})
+    } else {
+      vid.pause()
     }
   }
 
-  const toggleExpand = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }))
-  const toggleFollow = (id) => setFollowing(prev => ({ ...prev, [id]: !prev[id] }))
+  function onPlay(id) { setPaused(p => ({ ...p, [id]: false })) }
+  function onPause(id) { setPaused(p => ({ ...p, [id]: true })) }
 
-  const formatINR = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Number(n || 0));
-
-  function handleUploadClick() {
-    try {
-      const type = localStorage.getItem('profileType')
-      if (type !== 'partner') {
-        window.toast?.('Please sign in as food partner', { type: 'info' })
-        navigate('/food-partner/login')
-        return
-      }
-      navigate('/create-food')
-    } catch {
-      navigate('/food-partner/login')
-    }
-  }
-
-  function clearCart() {
-    try { localStorage.removeItem('cart'); window.toast?.('Cart cleared', { type: 'success' }) } catch {}
-  }
-  function clearProfileCache() {
-    try {
-      ['profileName','profileEmail','avatarUrl','partnerAvatarUrl','profileType','partnerId']
-        .forEach(k => localStorage.removeItem(k))
-      window.toast?.('Local profile cache cleared', { type: 'success' })
-    } catch {}
-  }
-  function clearSavedLocal() {
-    try {
-      localStorage.removeItem('saved') // placeholder if used
-      window.toast?.('Saved (local) cleared', { type: 'success' })
-    } catch {}
-  }
-
-  function handleLike(item) {
-    setLiked(prev => ({ ...prev, [item._id]: !prev[item._id] }))
-    onLike && onLike(item)
-  }
-  function handleSave(item) {
-    setSaved(prev => ({ ...prev, [item._id]: !prev[item._id] }))
-    onSave && onSave(item)
-  }
-
-  async function openComments(foodId) {
-    setCommentSheet({ open: true, foodId })
-    setComments([])
-    setLoadingComments(true)
-    try {
-      const res = await fetch(`${API_BASE}/api/food/comments/${foodId}`, { credentials: 'include' })
-      if (res.ok) {
-        const data = await res.json()
-        setComments(data.comments || [])
-        const likedMap = {}
-        data.comments?.forEach(c => { if (c.liked) likedMap[c._id] = true })
-        setCommentLikes(likedMap)
-      }
-    } catch {/* noop */} finally {
-      setLoadingComments(false)
-    }
-  }
-
-  function closeComments() {
-    setCommentSheet({ open: false, foodId: null })
-    setCommentText('')
-  }
-
-  async function submitComment(e) {
-    e.preventDefault()
-    if (!commentText.trim() || !commentSheet.foodId) return
-    const tempId = 'tmp_' + Date.now()
-    const optimistic = {
-      _id: tempId,
-      text: commentText.trim(),
-      likeCount: 0,
-      liked: false,
-      user: { name: profileName },
-      relTime: 'now'
-    }
-    setComments(prev => [optimistic, ...prev])
-    setCommentText('')
-    // increment local count on reel
-    // (shallow update—only visual)
-    try {
-      const res = await fetch(`${API_BASE}/api/food/comment`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ foodId: commentSheet.foodId, text: optimistic.text })
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setComments(prev => prev.map(c => c._id === tempId ? data.comment : c))
-      } else {
-        setComments(prev => prev.filter(c => c._id !== tempId))
-        window.toast?.('Failed to post comment', { type: 'error' })
-      }
-    } catch {
-      setComments(prev => prev.filter(c => c._id !== tempId))
-      window.toast?.('Failed to post comment', { type: 'error' })
-    }
-  }
-
-  async function toggleCommentLike(comment) {
-    const id = comment._id
-    const optimisticLiked = !commentLikes[id]
-    setCommentLikes(prev => ({ ...prev, [id]: optimisticLiked }))
-    setComments(prev => prev.map(c => c._id === id
-      ? { ...c, likeCount: Math.max(0, (c.likeCount || 0) + (optimisticLiked ? 1 : -1)) }
-      : c))
-    try {
-      await fetch(`${API_BASE}/api/food/comment/like`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ commentId: id })
-      })
-    } catch {
-      // revert on failure
-      setCommentLikes(prev => ({ ...prev, [id]: !optimisticLiked }))
-      setComments(prev => prev.map(c => c._id === id
-        ? { ...c, likeCount: Math.max(0, (c.likeCount || 0) + (!optimisticLiked ? 1 : -1)) }
-        : c))
-    }
-  }
+  // ...existing code...
 
   return (
     <div className="reels-page">
@@ -364,7 +199,7 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
           <section
             key={item._id}
             id={`reel-${item._id}`}
-            className="reel"
+            className={`reel ${paused[item._id] ? 'is-paused' : ''}`}
             role="listitem"
           >
             <video
@@ -375,8 +210,18 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
               playsInline
               loop
               preload="metadata"
+              onClick={() => handleVideoClick(item._id)}
+              onPlay={() => onPlay(item._id)}
+              onPause={() => onPause(item._id)}
             />
-
+            {/* Paused indicator */}
+            {paused[item._id] && (
+              <div className="reel-paused-indicator" aria-hidden="true">
+                <svg width="54" height="54" viewBox="0 0 24 24" fill="white">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            )}
             <div className="reel-overlay">
               <div className="reel-overlay-gradient" aria-hidden="true" />
               <div className="reel-actions">
@@ -394,7 +239,7 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
                   <div className="reel-action__count">{item.likeCount ?? item.likesCount ?? item.likes ?? 0}</div>
                 </div>
 
-                <div className="reel-action-group">
+                <div className="reel-action-group"></div>
                   <button
                     className={`reel-action save-action ${saved[item._id] ? 'is-saved' : ''}`}
                     onClick={onSave ? () => handleSave(item) : undefined}
@@ -554,6 +399,161 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
           <aside className="sheet" role="dialog" aria-modal="true" aria-label="Profile menu">
             {/* ...existing sheet-head... */}
             <header className="sheet-head">
+              <div className="sheet-avatar" aria-hidden="true">
+                {avatarUrl
+                  ? <img src={avatarUrl} alt="" style={{width:'100%',height:'100%',borderRadius:'999px',objectFit:'cover'}} />
+                  : avatarLetter}
+              </div>
+              <div className="sheet-meta">
+                <div className="sheet-name">{profileName}</div>
+                <div className="sheet-handle">{handle}</div>
+              </div>
+              <button className="sheet-close" onClick={() => { setSheetOpen(false); setSettingsOpen(false) }} aria-label="Close">✕</button>
+            </header>
+            {!settingsOpen && (
+              <nav className="sheet-items">
+                <Link to="/profile" className="sheet-item" onClick={() => setSheetOpen(false)}>Profile</Link>
+                <Link to="/create-food" className="sheet-item" onClick={() => setSheetOpen(false)}>Upload Reel</Link>
+                <Link to="/cart" className="sheet-item" onClick={() => setSheetOpen(false)}>Cart</Link>
+                <Link to="/saved" className="sheet-item" onClick={() => setSheetOpen(false)}>Saved</Link>
+                <button
+                  type="button"
+                  className="sheet-item sheet-item-settings"
+                  onClick={() => setSettingsOpen(true)}
+                  aria-label="Open settings"
+                >
+                  Settings
+                </button>
+                <button type="button" className="sheet-item danger" onClick={handleLogout}>Log out</button>
+              </nav>
+            )}
+
+            {settingsOpen && (
+              <div className="settings-panel" role="group" aria-label="Settings">
+                <div className="settings-head">
+                  <h2 className="settings-title">Settings</h2>
+                  <button
+                    type="button"
+                    className="settings-close-btn"
+                    aria-label="Back to menu"
+                    onClick={() => setSettingsOpen(false)}
+                  >←</button>
+                </div>
+
+                <div className="settings-section">
+                  <h3>Appearance</h3>
+                  <div className="settings-radio-group" role="radiogroup" aria-label="Theme">
+                    {['system','light','dark'].map(opt => (
+                      <label key={opt} className="settings-radio">
+                        <input
+                          type="radio"
+                          name="theme"
+                          value={opt}
+                          checked={themePref === opt}
+                          onChange={() => updateTheme(opt)}
+                        />
+                        <span className="settings-radio-label">{opt.charAt(0).toUpperCase()+opt.slice(1)}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="settings-section">
+                  <h3>Data</h3>
+                  <button type="button" className="settings-btn" onClick={clearCart}>Clear cart</button>
+                  <button type="button" className="settings-btn" onClick={clearSavedLocal}>Clear saved (local)</button>
+                  <button type="button" className="settings-btn" onClick={clearProfileCache}>Clear profile cache</button>
+                </div>
+
+                <div className="settings-section">
+                  <h3>Session</h3>
+                  <button type="button" className="settings-btn" onClick={handleLogout}>Logout</button>
+                </div>
+
+                <div className="settings-section danger-zone">
+                  <h3>Danger Zone</h3>
+                  <button
+                    type="button"
+                    className="settings-btn danger"
+                    onClick={() => {
+                      clearCart(); clearProfileCache(); handleLogout();
+                    }}
+                  >
+                    Reset & Logout
+                  </button>
+                </div>
+              </div>
+            )}
+          </aside>
+        </>
+      )}
+
+      {/* Comment sheet overlay */}
+      {commentSheet.open && (
+        <div className="comments-layer" role="dialog" aria-modal="true" aria-label="Comments">
+          <div className="comments-backdrop" onClick={closeComments} />
+          <div className="comments-panel">
+            <header className="comments-head">
+              <button className="comments-close" onClick={closeComments} aria-label="Close comments">✕</button>
+              <h2 className="comments-title">Comments</h2>
+            </header>
+            <div className="comments-scroll">
+              {loadingComments && <div className="comments-loading">Loading…</div>}
+              {!loadingComments && comments.length === 0 && (
+                <div className="comments-empty">No comments yet. Be first!</div>
+              )}
+              {!loadingComments && comments.map(c => {
+                const letter = (c.user?.name || 'U').trim().charAt(0).toUpperCase()
+                const liked = !!commentLikes[c._id]
+                return (
+                  <div key={c._id} className="comment-row">
+                    <div className="comment-avatar" aria-hidden="true">{letter}</div>
+                    <div className="comment-body">
+                      <div className="comment-meta">
+                        <span className="comment-user">{c.user?.name || 'User'}</span>
+                        <span className="comment-dot">•</span>
+                        <span className="comment-time">{c.relTime || ''}</span>
+                      </div>
+                      <p className="comment-text">{c.text}</p>
+                      <div className="comment-actions">
+                        <button
+                          type="button"
+                          className={`comment-like-btn ${liked ? 'is-liked' : ''}`}
+                          aria-label={liked ? 'Unlike comment' : 'Like comment'}
+                          aria-pressed={liked}
+                          onClick={() => toggleCommentLike(c)}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
+                          </svg>
+                          <span>{c.likeCount || 0}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <form className="comments-input-bar" onSubmit={submitComment}>
+              <input
+                type="text"
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                maxLength={500}
+                aria-label="Add a comment"
+              />
+              <button type="submit" disabled={!commentText.trim()} className="comments-send">Post</button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+export default ReelFeed
               <div className="sheet-avatar" aria-hidden="true">
                 {avatarUrl
                   ? <img src={avatarUrl} alt="" style={{width:'100%',height:'100%',borderRadius:'999px',objectFit:'cover'}} />
