@@ -28,6 +28,7 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   const [globalAudioEnabled, setGlobalAudioEnabled] = useState(false)
   const [noAudioNotified, setNoAudioNotified] = useState({})
   const [manualPaused, setManualPaused] = useState({}) // id => true if user paused
+  const [shareFlash, setShareFlash] = useState({})     // id => true right after share
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -356,6 +357,60 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     }
   }
 
+  function handleShare(item) {
+    try {
+      const origin = (typeof window !== 'undefined' && window.location?.origin) || 'https://foodgram.app'
+      const url = `${origin}/?v=${encodeURIComponent(item._id)}`
+      const title = item.name || 'Check this reel on Foodgram'
+      const text = item.description ? item.description.slice(0, 120) : 'Delicious food reel'
+      const doFlash = () => {
+        setShareFlash(prev => ({ ...prev, [item._id]: true }))
+        setTimeout(() => setShareFlash(prev => {
+          const n = { ...prev }; delete n[item._id]; return n
+        }), 900)
+      }
+
+      if (navigator.share) {
+        navigator.share({ title, text, url })
+          .then(() => {
+            window.toast?.('Shared', { type: 'success' })
+            doFlash()
+          })
+          .catch(err => {
+            if (err?.name !== 'AbortError') fallbackCopy()
+          })
+      } else {
+        fallbackCopy()
+      }
+
+      function fallbackCopy() {
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(url)
+            .then(() => {
+              window.toast?.('Link copied', { type: 'success' })
+              doFlash()
+            })
+            .catch(() => {
+              window.toast?.('Copy failed', { type: 'error' })
+            })
+        } else {
+          // legacy fallback
+            const ta = document.createElement('textarea')
+            ta.value = url
+            ta.style.position = 'fixed'
+            ta.style.opacity = '0'
+            document.body.appendChild(ta)
+            ta.select()
+            try { document.execCommand('copy'); window.toast?.('Link copied', { type: 'success' }); doFlash() }
+            catch { window.toast?.('Copy failed', { type: 'error' }) }
+            finally { document.body.removeChild(ta) }
+        }
+      }
+    } catch {
+      window.toast?.('Share unavailable', { type: 'error' })
+    }
+  }
+
   return (
     <div className="reels-page">
       {/* IG-like top header */}
@@ -469,6 +524,21 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
                     </svg>
                   </button>
                   <div className="reel-action__count">{item.commentsCount ?? (Array.isArray(item.comments) ? item.comments.length : 0)}</div>
+                </div>
+
+                <div className="reel-action-group">
+                  <button
+                    className={`reel-action share-action ${shareFlash[item._id] ? 'is-flash' : ''}`}
+                    aria-label="Share reel"
+                    onClick={() => handleShare(item)}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
+                      <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/>
+                      <path d="M12 16V3"/>
+                      <path d="M8 7l4-4 4 4"/>
+                    </svg>
+                  </button>
+                  <div className="reel-action__count" aria-hidden="true">Share</div>
                 </div>
 
                 <div className="reel-action-group">
