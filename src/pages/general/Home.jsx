@@ -112,6 +112,44 @@ const Home = () => {
         }
     }
 
+    async function deleteVideo(item) {
+        const isPartner = localStorage.getItem('profileType') === 'partner'
+        const localPid = localStorage.getItem('partnerId')
+        const itemPid = typeof item.foodPartner === 'object' ? item.foodPartner?._id : item.foodPartner
+        if (!isPartner || !localPid || String(localPid) !== String(itemPid)) {
+            window.toast?.('Not authorized to delete this reel', { type: 'error' })
+            return { ok: false, unauthorized: true }
+        }
+        try {
+            const res = await fetch(`${API_BASE}/api/food/${item._id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            })
+            if (!res.ok) {
+                if (res.status === 401 || res.status === 403) {
+                    window.toast?.('Session expired or unauthorized', { type: 'warning' })
+                    return { ok: false, unauthorized: true }
+                }
+                window.toast?.('Delete failed', { type: 'error' })
+                return { ok: false }
+            }
+            setVideos(prev => prev.filter(v => v._id !== item._id))
+            // clean local caches
+            try {
+                const likedSet = new Set(JSON.parse(localStorage.getItem('likedLocal') || '[]'))
+                const savedSet = new Set(JSON.parse(localStorage.getItem('savedLocal') || '[]'))
+                likedSet.delete(item._id); savedSet.delete(item._id)
+                localStorage.setItem('likedLocal', JSON.stringify(Array.from(likedSet)))
+                localStorage.setItem('savedLocal', JSON.stringify(Array.from(savedSet)))
+            } catch {}
+            window.toast?.('Reel deleted', { type: 'success' })
+            return { ok: true }
+        } catch {
+            window.toast?.('Delete failed', { type: 'error' })
+            return { ok: false }
+        }
+    }
+
     // Signed-out detection (local, fast)
     const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
 
@@ -168,6 +206,7 @@ const Home = () => {
             items={videos}
             onLike={likeVideo}
             onSave={saveVideo}
+            onDelete={deleteVideo}
             emptyMessage="No videos available."
             focusId={focusId}
         />

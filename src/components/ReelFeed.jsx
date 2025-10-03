@@ -6,8 +6,9 @@ import { Link, useNavigate } from 'react-router-dom'
 // - items: Array of video items { _id, video, description, likeCount, savesCount, commentsCount, comments, foodPartner }
 // - onLike: (item) => void | Promise<void>
 // - onSave: (item) => void | Promise<void>
+// - onDelete: (item) => void | Promise<void>
 // - emptyMessage: string
-const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.', focusId, allSaved = false }) => {
+const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No videos yet.', focusId, allSaved = false }) => {
   const videoRefs = useRef(new Map())
   const [sheetOpen, setSheetOpen] = useState(false)
   const [added, setAdded] = useState({}) // id => true for brief animation
@@ -594,6 +595,33 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
                     {muted[item._id] === false ? 'On' : 'Off'}
                   </div>
                 </div>
+
+                {/* Owner Delete (only visible to uploading partner) */}
+                {(() => {
+                  try {
+                    const isPartner = localStorage.getItem('profileType') === 'partner'
+                    const localPid = localStorage.getItem('partnerId')
+                    const itemPid = typeof item.foodPartner === 'object'
+                      ? item.foodPartner?._id
+                      : item.foodPartner
+                    const owner = isPartner && localPid && itemPid && String(localPid) === String(itemPid)
+                    if (!owner) return null
+                    return (
+                      <div className="reel-action-group">
+                        <button
+                          className="reel-action delete-action"
+                          aria-label="Delete reel"
+                          onClick={() => handleDelete(item)}
+                        >
+                          <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
+                            <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14"/>
+                          </svg>
+                        </button>
+                        <div className="reel-action__count" aria-hidden="true">Del</div>
+                      </div>
+                    )
+                  } catch { return null }
+                })()}
               </div>
 
               <div className="reel-content">

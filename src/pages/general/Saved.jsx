@@ -128,11 +128,43 @@ const Saved = () => {
         }
     }
 
+    const deleteVideo = async (item) => {
+        const isPartner = localStorage.getItem('profileType') === 'partner'
+        const localPid = localStorage.getItem('partnerId')
+        const itemPid = typeof item.foodPartner === 'object' ? item.foodPartner?._id : item.foodPartner
+        if (!isPartner || !localPid || String(localPid) !== String(itemPid)) {
+            window.toast?.('Not authorized to delete', { type: 'error' })
+            return { ok: false, unauthorized: true }
+        }
+        try {
+            const res = await fetch(`${API_BASE}/api/food/${item._id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            })
+            if (!res.ok) {
+                window.toast?.('Delete failed', { type: 'error' })
+                return { ok: false }
+            }
+            setVideos(prev => prev.filter(v => v._id !== item._id))
+            try {
+              const savedSet = new Set(JSON.parse(localStorage.getItem('savedLocal') || '[]'))
+              savedSet.delete(item._id)
+              localStorage.setItem('savedLocal', JSON.stringify(Array.from(savedSet)))
+            } catch {}
+            window.toast?.('Reel deleted', { type: 'success' })
+            return { ok: true }
+        } catch {
+            window.toast?.('Delete failed', { type: 'error' })
+            return { ok: false }
+        }
+    }
+
     return (
         <ReelFeed
             items={videos}
             onLike={likeVideo}
             onSave={removeSaved}
+            onDelete={deleteVideo}
             emptyMessage="No saved videos yet."
             allSaved={true}
         />
