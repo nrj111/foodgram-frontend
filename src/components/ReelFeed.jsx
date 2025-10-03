@@ -24,8 +24,9 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
   const [commentText, setCommentText] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
   const [commentLikes, setCommentLikes] = useState({}) // commentId => true
-  const [muted, setMuted] = useState({})            // _id => true (default)
-  const [hasAudio, setHasAudio] = useState({})      // _id => boolean
+  const [muted, setMuted] = useState({})              // per-reel mute flag (true = muted)
+  const [globalAudioEnabled, setGlobalAudioEnabled] = useState(false) // first user gesture unlock
+  const [noAudioNotified, setNoAudioNotified] = useState({}) // reelId => notified once
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -81,48 +82,68 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     apply(themePref)
   }, [themePref])
 
+  useEffect(() => {
+    function firstInteract() {
+      if (globalAudioEnabled) return
+      setGlobalAudioEnabled(true)
+      // Unmute the most visible (≥0.6 intersection) video
+      requestAnimationFrame(() => {
+        let topCandidate = null
+        videoRefs.current.forEach(v => {
+          try {
+            const rect = v.getBoundingClientRect()
+            const visible = Math.max(0, Math.min(window.innerHeight, rect.bottom) - Math.max(0, rect.top))
+            const ratio = visible / Math.max(1, rect.height)
+            if (ratio >= 0.55 && !topCandidate) topCandidate = v
+          } catch {}
+        })
+        if (topCandidate) {
+          topCandidate.muted = false
+          topCandidate.play?.().catch(()=>{})
+        }
+      })
+      window.removeEventListener('pointerdown', firstInteract, true)
+      window.removeEventListener('keydown', firstInteract, true)
+    }
+    window.addEventListener('pointerdown', firstInteract, true)
+    window.addEventListener('keydown', firstInteract, true)
+    return () => {
+      window.removeEventListener('pointerdown', firstInteract, true)
+      window.removeEventListener('keydown', firstInteract, true)
+    }
+  }, [globalAudioEnabled])
+
   const setVideoRef = (id) => (el) => {
     if (!el) { videoRefs.current.delete(id); return }
     videoRefs.current.set(id, el)
-    // ensure default muted state
-    setMuted(prev => prev[id] === undefined ? { ...prev, [id]: true } : prev)
-  }
-
-  function detectAudio(el) {
-    try {
-      const present =
-        el.mozHasAudio ||
-        Boolean(el.webkitAudioDecodedByteCount) ||
-        (el.audioTracks && el.audioTracks.length > 0) ||
-        (el.captureStream && el.captureStream()?.getAudioTracks()?.length > 0)
-      return !!present
-    } catch { return false }
-  }
-
-  function handleLoadedMeta(id) {
-    const vid = videoRefs.current.get(id)
-    if (vid) {
-      setHasAudio(prev => ({ ...prev, [id]: detectAudio(vid) }))
-    }
+    setMuted(prev => prev[id] === undefined
+      ? { ...prev, [id]: globalAudioEnabled ? false : true }
+      : prev)
   }
 
   function toggleAudio(id) {
+    const vid = videoRefs.current.get(id)
     setMuted(prev => {
-      const next = !prev[id]
-      // user gesture -> try play with sound
-      const vid = videoRefs.current.get(id)
+      const nextMuted = !prev[id]
       if (vid) {
-        vid.muted = !vid.muted
-        if (!vid.muted) vid.play?.().catch(()=>{})
+        vid.muted = nextMuted
+        if (!nextMuted) {
+          vid.play?.().catch(()=>{})
+          // Try to detect missing audio AFTER unmute attempt
+          try {
+            const hasTrack = (vid.audioTracks && vid.audioTracks.length > 0)
+              || vid.mozHasAudio
+              || Boolean(vid.webkitAudioDecodedByteCount)
+              || (vid.captureStream && vid.captureStream()?.getAudioTracks()?.length > 0)
+            if (!hasTrack && !noAudioNotified[id]) {
+              window.toast?.('No audio track for this reel', { type: 'info' })
+              setNoAudioNotified(n => ({ ...n, [id]: true }))
+            }
+          } catch {}
+        }
       }
-      return { ...prev, [id]: next === undefined ? false : next }
+      return { ...prev, [id]: nextMuted }
     })
-  }
-
-  function updateTheme(pref) {
-    setThemePref(pref)
-    try { localStorage.setItem('themePreference', pref) } catch {}
-    window.toast?.(`Theme: ${pref}`, { type: 'info' })
   }
 
   async function handleLogout() {
@@ -350,11 +371,10 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
               ref={setVideoRef(item._id)}
               className="reel-video"
               src={item.video}
-              muted={!!muted[item._id]}
+              muted={muted[item._id] !== false}
               playsInline
               loop
               preload="metadata"
-              onLoadedMetadata={() => handleLoadedMeta(item._id)}
             />
 
             <div className="reel-overlay">
@@ -401,27 +421,27 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
                   <div className="reel-action__count">{item.commentsCount ?? (Array.isArray(item.comments) ? item.comments.length : 0)}</div>
                 </div>
 
-                {hasAudio[item._id] && (
-                  <div className="reel-action-group">
-                    <button
-                      className={`reel-action audio-action ${!muted[item._id] ? 'is-on' : ''}`}
-                      aria-label={muted[item._id] ? 'Unmute' : 'Mute'}
-                      aria-pressed={!muted[item._id]}
-                      onClick={() => toggleAudio(item._id)}
-                    >
-                      {muted[item._id] ? (
-                        <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
-                          <path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="m18 9-4 4"/><path d="m14 9 4 4"/>
-                        </svg>
-                      ) : (
-                        <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
-                          <path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M16 8.82a4 4 0 0 1 0 6.36"/><path d="M18.8 6a8 8 0 0 1 0 12"/>
-                        </svg>
-                      )}
-                    </button>
-                    <div className="reel-action__count" aria-hidden="true">{!muted[item._id] ? 'On' : 'Off'}</div>
+                <div className="reel-action-group">
+                  <button
+                    className={`reel-action audio-action ${muted[item._id] === false ? 'is-on' : ''}`}
+                    aria-label={muted[item._id] === false ? 'Mute' : 'Unmute'}
+                    aria-pressed={muted[item._id] === false}
+                    onClick={() => toggleAudio(item._id)}
+                  >
+                    {muted[item._id] === false ? (
+                      <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
+                        <path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M16 8.82a4 4 0 0 1 0 6.36"/><path d="M18.8 6a8 8 0 0 1 0 12"/>
+                      </svg>
+                    ) : (
+                      <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
+                        <path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="m18 9-4 4"/><path d="m14 9 4 4"/>
+                      </svg>
+                    )}
+                  </button>
+                  <div className="reel-action__count" aria-hidden="true">
+                    {muted[item._id] === false ? 'On' : 'Off'}
                   </div>
-                )}
+                </div>
               </div>
 
               <div className="reel-content">
