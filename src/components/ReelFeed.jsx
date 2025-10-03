@@ -7,7 +7,7 @@ import { Link, useNavigate } from 'react-router-dom'
 // - onLike: (item) => void | Promise<void>
 // - onSave: (item) => void | Promise<void>
 // - emptyMessage: string
-const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.', focusId }) => {
+const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.', focusId, allSaved = false }) => {
   const videoRefs = useRef(new Map())
   const [sheetOpen, setSheetOpen] = useState(false)
   const [added, setAdded] = useState({}) // id => true for brief animation
@@ -410,6 +410,21 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
       window.toast?.('Share unavailable', { type: 'error' })
     }
   }
+
+  useEffect(() => {
+    if (!allSaved || !items.length) return
+    setSaved(prev => {
+      let changed = false
+      const next = { ...prev }
+      items.forEach(it => {
+        if (next[it._id] === undefined) {
+          next[it._id] = true
+          changed = true
+        }
+      })
+      return changed ? next : prev
+    })
+  }, [items, allSaved])
 
   return (
     <div className="reels-page">
