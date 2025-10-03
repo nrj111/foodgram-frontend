@@ -135,9 +135,13 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
       const next = !current
       if (vid) {
         vid.muted = next
+        // Force a quick play attempt to ensure audio state applies (some browsers need gesture->play)
         if (!next) {
-          vid.play?.().catch(()=>{})
-          // lightweight audio presence heuristic
+          const p = vid.play?.()
+          if (p && p.catch) p.catch(()=>{})
+        }
+        // Heuristic audio track notice
+        if (!next) {
           try {
             const hasTrack = (vid.audioTracks && vid.audioTracks.length > 0) ||
               vid.mozHasAudio ||
@@ -159,8 +163,14 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     setManualPaused(prev => {
       const nowPaused = !prev[id]
       if (vid) {
-        if (nowPaused) vid.pause()
-        else vid.play?.().catch(()=>{})
+        if (nowPaused) {
+          vid.pause()
+          vid.classList.add('is-paused')
+        } else {
+          vid.classList.remove('is-paused')
+          const p = vid.play?.()
+          if (p && p.catch) p.catch(()=>{})
+        }
       }
       return { ...prev, [id]: nowPaused }
     })
@@ -407,11 +417,14 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
 
             <div className="reel-overlay">
               <div className="reel-overlay-gradient" aria-hidden="true" />
+              {/* Paused overlay (absolute, no layout shift) */}
               {manualPaused[item._id] && (
                 <div className="reel-paused-indicator" aria-label="Paused">
-                  <svg width="68" height="68" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M8 5v14l11-7z" fill="currentColor" />
-                  </svg>
+                  <div className="reel-paused-circle">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M8 5v14l11-7z" fill="currentColor" />
+                    </svg>
+                  </div>
                   <span className="reel-paused-hint">Tap to play</span>
                 </div>
               )}
