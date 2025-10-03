@@ -67,34 +67,55 @@ const Saved = () => {
         return () => { cancelled = true }
     }, [API_BASE]) // fixed: add dependency array
 
+    const likeVideo = async (item) => {
+        try {
+            const { data } = await axios.post(`${API_BASE}/api/food/like`, { foodId: item._id }, { withCredentials: true })
+            const liked = !!data.liked
+            const likeCount = data.likeCount
+            setVideos(prev => prev.map(v => v._id === item._id ? { ...v, likeCount } : v))
+            try {
+              const raw = localStorage.getItem('likedLocal')
+              const set = new Set(raw ? JSON.parse(raw) : [])
+              if (liked) set.add(item._id); else set.delete(item._id)
+              localStorage.setItem('likedLocal', JSON.stringify(Array.from(set)))
+            } catch {}
+            return { ok: true, liked, likeCount }
+        } catch {
+            window.toast?.('Like failed', { type: 'error' })
+            return { ok: false }
+        }
+    }
+
     const removeSaved = async (item) => {
         try {
             const { data } = await axios.post(`${API_BASE}/api/food/save`, { foodId: item._id }, { withCredentials: true })
-            const nowSaved = !!data.saved || !!data.save
-            if (!nowSaved) {
+            const saved = !!data.saved
+            const savesCount = data.savesCount
+            if (!saved) {
                 setVideos(prev => prev.filter(v => v._id !== item._id))
             } else {
-                setVideos(prev => prev.map(v =>
-                  v._id === item._id ? { ...v, savesCount: (v.savesCount ?? 0) + 1 } : v
-                ))
+                setVideos(prev => prev.map(v => v._id === item._id ? { ...v, savesCount } : v))
             }
-            // sync local fallback store
+            // sync local saved set
             try {
               const raw = localStorage.getItem('savedLocal')
               const set = new Set(raw ? JSON.parse(raw) : [])
-              if (nowSaved) set.add(item._id); else set.delete(item._id)
+              if (saved) set.add(item._id); else set.delete(item._id)
               const arr = Array.from(set)
               localStorage.setItem('savedLocal', JSON.stringify(arr))
               window.dispatchEvent(new CustomEvent('saved:count', { detail: arr.length }))
             } catch {}
+            return { ok: true, saved, savesCount }
         } catch {
             window.toast?.('Failed to update saved state', { type: 'error' })
+            return { ok: false }
         }
     }
 
     return (
         <ReelFeed
             items={videos}
+            onLike={likeVideo}
             onSave={removeSaved}
             emptyMessage="No saved videos yet."
             allSaved={true}

@@ -232,13 +232,52 @@ const ReelFeed = ({ items = [], onLike, onSave, emptyMessage = 'No videos yet.',
     try { localStorage.setItem('themePreference', pref) } catch {}
   }
 
-  function handleLike(item) {
-    setLiked(prev => ({ ...prev, [item._id]: !prev[item._id] }))
-    onLike && onLike(item)
+  // Initialize liked/saved from localStorage + items provided
+  useEffect(() => {
+    try {
+      const likedSet = new Set(JSON.parse(localStorage.getItem('likedLocal') || '[]'))
+      const savedSet = new Set(JSON.parse(localStorage.getItem('savedLocal') || '[]'))
+      setLiked(prev => {
+        const next = { ...prev }
+        items.forEach(i => { if (likedSet.has(i._id)) next[i._id] = true })
+        return next
+      })
+      setSaved(prev => {
+        const next = { ...prev }
+        if (allSaved) {
+          items.forEach(i => { next[i._id] = true })
+        } else {
+          items.forEach(i => { if (savedSet.has(i._id)) next[i._id] = true })
+        }
+        return next
+      })
+    } catch {}
+  }, [items, allSaved])
+
+  async function handleLike(item) {
+    const optimistic = !liked[item._id]
+    setLiked(p => ({ ...p, [item._id]: optimistic }))
+    const result = await (onLike ? onLike(item) : Promise.resolve({ ok: true, liked: optimistic }))
+    if (!result.ok) {
+      // revert
+      setLiked(p => ({ ...p, [item._id]: !optimistic }))
+    } else if (typeof result.liked === 'boolean') {
+      setLiked(p => ({ ...p, [item._id]: result.liked }))
+    }
   }
-  function handleSave(item) {
-    setSaved(prev => ({ ...prev, [item._id]: !prev[item._id] }))
-    onSave && onSave(item)
+
+  async function handleSave(item) {
+    const optimistic = !saved[item._id]
+    setSaved(p => ({ ...p, [item._id]: optimistic }))
+    const result = await (onSave ? onSave(item) : Promise.resolve({ ok: true, saved: optimistic }))
+    if (!result.ok) {
+      setSaved(p => ({ ...p, [item._id]: !optimistic }))
+    } else if (typeof result.saved === 'boolean') {
+      setSaved(p => ({ ...p, [item._id]: result.saved }))
+      if (result.saved) {
+        window.toast?.('Reel saved', { type: 'success' })
+      }
+    }
   }
 
   async function openComments(foodId) {

@@ -801,13 +801,39 @@
 }
 .reel-action.is-saved svg path { fill: currentColor; }
 
-/* Circular bubbling animation for LIKE / SAVE */
-.reel-action.like-action.is-liked,
-.reel-action.save-action.is-saved {
+/* Instagram-like LIKE / SAVE animation (override previous bubble style) */
+.reel-action.like-action,
+.reel-action.save-action {
   position: relative;
   overflow: visible;
+  transition: background .35s ease, border-color .35s ease, transform .35s ease;
 }
 
+/* Heart pop */
+.reel-action.like-action.is-liked {
+  background: radial-gradient(circle at 50% 45%, #ff4d67 0%, #e80050 70%);
+  border-color: rgba(255,90,140,.55);
+  color:#fff;
+  animation: ig-like-pop .5s cubic-bezier(.25,.85,.35,1.2);
+}
+.reel-action.like-action.is-liked svg path {
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+/* Bookmark pop */
+.reel-action.save-action.is-saved {
+  background: linear-gradient(145deg, var(--color-accent) 0%, var(--color-accent-hover) 90%);
+  border-color: color-mix(in srgb, var(--color-accent) 65%, #ffffff 15%);
+  color:#fff;
+  animation: ig-save-pop .48s cubic-bezier(.25,.85,.35,1.2);
+}
+.reel-action.save-action.is-saved svg path {
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+/* Soft expanding halo rings */
 .reel-action.like-action.is-liked::before,
 .reel-action.like-action.is-liked::after,
 .reel-action.save-action.is-saved::before,
@@ -815,61 +841,46 @@
   content:"";
   position:absolute;
   inset:0;
-  margin:auto;
-  width:100%;
-  height:100%;
   border-radius:50%;
-  background: radial-gradient(circle at center,
-    rgba(255,255,255,.85) 0 8%,
-    rgba(255,255,255,.35) 9% 18%,
-    rgba(255,255,255,0) 65%);
+  background:
+    radial-gradient(circle at center,
+      rgba(255,255,255,.85) 0 6%,
+      rgba(255,255,255,.35) 7% 14%,
+      rgba(255,255,255,0) 60%);
   opacity:0;
   transform: scale(.35);
   pointer-events:none;
 }
 
-.reel-action.like-action.is-liked::before { animation: bubble-ring 0.9s cubic-bezier(.4,0,.2,1); }
-.reel-action.like-action.is-liked::after  { animation: bubble-ring 1.2s .15s cubic-bezier(.4,0,.2,1); }
+.reel-action.like-action.is-liked::before { animation: ig-ring 0.65s ease-out; }
+.reel-action.like-action.is-liked::after  { animation: ig-ring 0.9s .08s ease-out; }
 
-.reel-action.save-action.is-saved::before { animation: bubble-ring 0.9s cubic-bezier(.4,0,.2,1); }
-.reel-action.save-action.is-saved::after  { animation: bubble-ring 1.2s .15s cubic-bezier(.4,0,.2,1); }
+.reel-action.save-action.is-saved::before { animation: ig-ring 0.6s ease-out; }
+.reel-action.save-action.is-saved::after  { animation: ig-ring 0.85s .07s ease-out; }
 
-@keyframes bubble-ring {
-  0%   { opacity:.0; transform: scale(.35); filter: blur(0); }
-  10%  { opacity:.9; }
-  45%  { opacity:.55; }
-  70%  { opacity:.25; }
-  100% { opacity:0; transform: scale(1.9); filter: blur(2px); }
-}
-
-/* Subtle inner pulse */
-.reel-action.like-action.is-liked > svg,
-.reel-action.save-action.is-saved > svg {
-  animation: icon-pop 0.55s cubic-bezier(.5,1.6,.4,1);
-  transform-origin: center;
-}
-@keyframes icon-pop {
-  0% { transform: scale(.6); }
+@keyframes ig-like-pop {
+  0% { transform: scale(.55); }
   40% { transform: scale(1.25); }
   70% { transform: scale(.92); }
   100% { transform: scale(1); }
 }
-
-/* Previous sparkle pseudo removed; bubble effect styles defined earlier (removed empty ruleset to satisfy linter) */
-
-/* OPTIONAL: tone down original box-shadows to emphasize bubbles */
-.reel-action.like-action.is-liked {
-  box-shadow:
-    0 0 0 2px rgba(255,255,255,.06),
-    0 6px 14px -4px rgba(255,70,120,.55),
-    0 10px 24px -6px rgba(255,80,150,.4);
+@keyframes ig-save-pop {
+  0% { transform: scale(.55); }
+  42% { transform: scale(1.22); }
+  72% { transform: scale(.94); }
+  100% { transform: scale(1); }
 }
-.reel-action.save-action.is-saved {
-  box-shadow:
-    0 0 0 2px rgba(255,255,255,.06),
-    0 6px 16px -6px color-mix(in srgb, var(--color-accent) 55%, transparent),
-    0 12px 26px -8px color-mix(in srgb, var(--color-accent-hover) 50%, transparent);
+@keyframes ig-ring {
+  0% { opacity:0; transform: scale(.35); filter: blur(0); }
+  12% { opacity:.95; }
+  45% { opacity:.55; }
+  70% { opacity:.25; }
+  100% { opacity:0; transform: scale(1.7); filter: blur(2px); }
 }
+
+/* Remove old bubble-ring & icon-pop animations (safely overridden) */
+@keyframes bubble-ring { }
+@keyframes icon-pop { }
 
 /* Comments overlay */
 .comments-layer {

@@ -54,33 +54,45 @@ const Home = () => {
     }, [API_BASE])
 
     async function likeVideo(item) {
-        const response = await axios.post(`${API_BASE}/api/food/like`, { foodId: item._id }, { withCredentials: true })
-        if (response.data.like) {
-            setVideos(prev => prev.map(v => v._id === item._id ? { ...v, likeCount: v.likeCount + 1 } : v))
-        } else {
-            setVideos(prev => prev.map(v => v._id === item._id ? { ...v, likeCount: v.likeCount - 1 } : v))
+        try {
+            const { data } = await axios.post(`${API_BASE}/api/food/like`, { foodId: item._id }, { withCredentials: true })
+            const liked = !!data.liked
+            const likeCount = data.likeCount ?? item.likeCount
+            setVideos(prev => prev.map(v => v._id === item._id ? { ...v, likeCount } : v))
+            // persist local liked set
+            try {
+                const raw = localStorage.getItem('likedLocal')
+                const set = new Set(raw ? JSON.parse(raw) : [])
+                if (liked) set.add(item._id); else set.delete(item._id)
+                localStorage.setItem('likedLocal', JSON.stringify(Array.from(set)))
+            } catch {}
+            return { ok: true, liked, likeCount }
+        } catch {
+            window.toast?.('Like failed', { type: 'error' })
+            return { ok: false }
         }
     }
 
     async function saveVideo(item) {
-        const response = await axios.post(`${API_BASE}/api/food/save`, { foodId: item._id }, { withCredentials: true })
-        const isNowSaved = !!response.data.saved || !!response.data.save
-        // update counts optimistically
-        setVideos(prev => prev.map(v => v._id === item._id
-          ? { ...v, savesCount: v.savesCount + (isNowSaved ? 1 : -1) }
-          : v))
-
-        // maintain local saved cache (fallback for /saved page when API returns empty)
         try {
-          const raw = localStorage.getItem('savedLocal')
-          const set = new Set(raw ? JSON.parse(raw) : [])
-          if (isNowSaved) set.add(item._id)
-          else set.delete(item._id)
-          const arr = Array.from(set)
-          localStorage.setItem('savedLocal', JSON.stringify(arr))
-          // notify bottom nav & other listeners
-          window.dispatchEvent(new CustomEvent('saved:count', { detail: arr.length }))
-        } catch {}
+            const { data } = await axios.post(`${API_BASE}/api/food/save`, { foodId: item._id }, { withCredentials: true })
+            const saved = !!data.saved
+            const savesCount = data.savesCount ?? item.savesCount
+            setVideos(prev => prev.map(v => v._id === item._id ? { ...v, savesCount } : v))
+            // maintain local saved cache
+            try {
+                const raw = localStorage.getItem('savedLocal')
+                const set = new Set(raw ? JSON.parse(raw) : [])
+                if (saved) set.add(item._id); else set.delete(item._id)
+                const arr = Array.from(set)
+                localStorage.setItem('savedLocal', JSON.stringify(arr))
+                window.dispatchEvent(new CustomEvent('saved:count', { detail: arr.length }))
+            } catch {}
+            return { ok: true, saved, savesCount }
+        } catch {
+            window.toast?.('Save failed', { type: 'error' })
+            return { ok: false }
+        }
     }
 
     // Signed-out detection (local, fast)
