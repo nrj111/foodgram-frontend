@@ -20,7 +20,9 @@ const Profile = () => {
                 setProfile(response.data.foodPartner)
                 setVideos(response.data.foodPartner.foodItems || [])
             })
-            .catch(() => { /* noop */ })
+            .catch(err => {
+                window.toastError?.(err, 'Failed to load partner profile')
+            })
     }, [ id, API_BASE ])
 
     const isOwner = (() => {

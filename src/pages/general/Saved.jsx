@@ -59,9 +59,10 @@ const Saved = () => {
             if (!cancelled && list.length === 0) {
               await loadLocalFallback()
             }
-          } catch {
+          } catch (err) {
             if (!cancelled) {
               setVideos([])
+              window.toastError?.(err, 'Failed to load saved reels')
               await loadLocalFallback()
             }
           }
@@ -88,8 +89,13 @@ const Saved = () => {
               commentsCount: f.commentsCount ?? 0,
               foodPartner: f.foodPartner
             }))
-            if (cleaned.length && !cancelled) setVideos(cleaned)
-          } catch {/* ignore */}
+            if (cleaned.length && !cancelled) {
+              setVideos(cleaned)
+              window.toast?.('Loaded offline saved reels', { type:'info' })
+            }
+          } catch (err) {
+            window.toastError?.(err, 'Failed offline saved load')
+          }
         }
 
         fetchSaved()

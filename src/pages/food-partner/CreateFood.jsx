@@ -76,14 +76,13 @@ const CreateFood = () => {
     const onSubmit = async (e) => {
         e.preventDefault();
         setFileError('');
-        if (!videoFile) { setFileError('Please select a video'); return; }
-
-        const nPrice = Number.parseFloat(price);                 // <-- added
-        if (Number.isNaN(nPrice) || nPrice < 0) {               // <-- added
+        if (!videoFile) { setFileError('Please select a video'); window.toast?.('Video required', { type:'error'}); return; }
+        const nPrice = Number.parseFloat(price);
+        if (Number.isNaN(nPrice) || nPrice < 0) {
             setFileError('Please enter a valid non-negative price');
+            window.toast?.('Invalid price', { type:'error' });
             return;
         }
-
         try {
             setUploading(true);
 
@@ -93,7 +92,8 @@ const CreateFood = () => {
                 const { data } = await axios.get(`${API_BASE}/api/food/upload/auth`, { withCredentials: true });
                 auth = data;
             } catch (err) {
-                throw new Error(`Failed to obtain upload credentials: ${err?.response?.data?.message || err.message}`);
+                window.toastError?.(err,'Upload credential error');
+                throw err;
             }
 
             // 2) Attempt direct client upload to ImageKit
@@ -117,7 +117,7 @@ const CreateFood = () => {
                 if (!ikJson?.url) throw new Error('ImageKit did not return a url');
                 remoteUrl = ikJson.url;
             } catch (err) {
-                console.warn('[ImageKit] Direct upload failed, attempting backend fallback:', err);
+                window.toast?.('Direct upload failed. Retrying via server…', { type:'warning' })
             }
 
             let response;
@@ -161,9 +161,9 @@ const CreateFood = () => {
                 window.toast?.(msg, { type: "error" });
             }
         } catch (err) {
-            const msg = err?.response?.data?.message || err?.message || "Upload failed. Check console/network for details.";
+            const msg = err?.response?.data?.message || err?.message || "Upload failed. Check network.";
             setFileError(msg);
-            window.toast?.(msg, { type: "error" });
+            window.toastError?.(err, msg);
         } finally {
             setUploading(false);
         }

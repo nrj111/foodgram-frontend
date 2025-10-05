@@ -412,13 +412,20 @@ const ReelFeed = ({
   }
 
   // --- SHARE HELPERS (replaced / enhanced) ---
-  function buildShareUrl(item) {
-    if (!item?._id) return (typeof window !== 'undefined' ? window.location.href : '')
-    const origin = (typeof window !== 'undefined' && window.location?.origin) || 'https://foodgram.app'
-    return `${origin}/?v=${encodeURIComponent(item._id)}`
+  // NEW unified ID resolver so sharing works for any item shape
+  function getItemId(item) {
+    return item?._id || item?.id || ''
   }
 
-  function flashShare(id) {
+  function buildShareUrl(item) {
+    const id = getItemId(item)
+    if (!id) return (typeof window !== 'undefined' ? window.location.href : '')
+    const origin = (typeof window !== 'undefined' && window.location?.origin) || 'https://foodgram.app'
+    return `${origin}/?v=${encodeURIComponent(id)}`
+  }
+
+  function flashShare(idRaw) {
+    const id = idRaw || ''
     if (!id) return
     setShareFlash(prev => ({ ...prev, [id]: true }))
     setTimeout(() => setShareFlash(prev => {
@@ -428,7 +435,6 @@ const ReelFeed = ({
 
   function openShareModal(item) {
     setShareModal({ open:true, item })
-    // small defer to let dialog mount then focus input for quick copy
     setTimeout(() => {
       try {
         const el = document.querySelector('.share-link-input')
@@ -440,28 +446,23 @@ const ReelFeed = ({
 
   async function handleShareClick(e, item) {
     e.stopPropagation()
-    if (!item?._id) return
+    const id = getItemId(item)
+    if (!id) return
     const url = buildShareUrl(item)
-    const title = item.name || 'Check this reel on Foodgram'
-    const text = item.description ? item.description.slice(0,120) : 'Delicious food reel'
+    const title = item?.name || 'Check this reel on Foodgram'
+    const text = item?.description ? String(item.description).slice(0,120) : 'Delicious food reel'
     if (navigator.share) {
       try {
         await navigator.share({ title, text, url })
         window.toast?.('Shared', { type:'success' })
-        flashShare(item._id)
+        flashShare(id)
         return
       } catch (err) {
-        if (err?.name === 'AbortError') {
-          // user cancelled -> still open modal so they can copy manually
-          openShareModal(item)
-          return
-        }
-        // Other error: fallback to modal
+        // On abort or any error fallback to modal so user can still copy
         openShareModal(item)
         return
       }
     }
-    // No native share – open modal
     openShareModal(item)
   }
 
@@ -482,7 +483,7 @@ const ReelFeed = ({
         document.body.removeChild(ta)
       }
       window.toast?.('Link copied', { type:'success' })
-      flashShare(shareModal.item._id)
+      flashShare(getItemId(shareModal.item))
     } catch {
       window.toast?.('Copy failed', { type:'error' })
     }
@@ -490,21 +491,21 @@ const ReelFeed = ({
 
   async function nativeShareFromModal() {
     if (!shareModal.item) return
-    if (!navigator.share) { copyShareLink(); return }
     const item = shareModal.item
+    const id = getItemId(item)
+    const url = buildShareUrl(item)
+    if (!navigator.share) { copyShareLink(); return }
     try {
       await navigator.share({
         title: item.name || 'Check this reel on Foodgram',
-        text: item.description ? item.description.slice(0,120) : 'Delicious food reel',
-        url: buildShareUrl(item)
+        text: item.description ? String(item.description).slice(0,120) : 'Delicious food reel',
+        url
       })
       window.toast?.('Shared', { type:'success' })
-      flashShare(item._id)
+      flashShare(id)
       closeShare()
     } catch (e) {
-      if (e?.name !== 'AbortError') {
-        window.toast?.('Share cancelled', { type:'info' })
-      }
+      if (e?.name !== 'AbortError') window.toast?.('Share cancelled', { type:'info' })
     }
   }
 
@@ -637,7 +638,7 @@ const ReelFeed = ({
                 <div className="reel-action-group">
                   <button
                     type="button"
-                    className={`reel-action share-action ${shareFlash[item._id] ? 'is-flash' : ''}`}
+                    className={`reel-action share-action ${shareFlash[getItemId(item)] ? 'is-flash' : ''}`}
                     aria-label="Share reel"
                     onClick={(e)=>handleShareClick(e,item)}
                   >

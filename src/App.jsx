@@ -28,7 +28,20 @@ function App() {
         setToasts((prev) => prev.filter(t => t.id !== id));
       }, duration);
     };
-    return () => { delete window.toast; };
+    window.toastError = (err, fallback = 'Operation failed') => {
+      try {
+        const msg =
+          err?.response?.data?.message ||
+          err?.data?.message ||
+          err?.message ||
+          (typeof err === 'string' ? err : '') ||
+          fallback;
+        window.toast?.(msg || fallback, { type: 'error' });
+      } catch {
+        window.toast?.(fallback, { type: 'error' });
+      }
+    };
+    return () => { delete window.toast; delete window.toastError; };
   }, []);
 
   return (

@@ -54,7 +54,7 @@ const FoodPartnerRegister = () => {
     } catch (err) {
       const msg = err.response?.data?.message || "Registration failed";
       setError(msg);
-      window.toast?.(msg, { type: "error" });
+      window.toastError?.(err, msg);
     } finally {
       setLoading(false);
     }

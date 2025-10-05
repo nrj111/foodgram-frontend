@@ -27,7 +27,10 @@ const Home = () => {
                     setLoading(false)
                     return
                 }
-            } catch {/* ignore */}
+                window.toast?.('Reel not found', { type:'error' })
+            } catch (err) {
+                window.toastError?.(err, 'Failed to load reel')
+            }
             setShareOnly(false)
             if (!isPublic) fetchAll()
             else setLoading(false)
@@ -44,7 +47,9 @@ const Home = () => {
                 }
                 setVideos(items)
               })
-              .catch(()=>{})
+              .catch(err=>{
+                window.toastError?.(err, 'Failed to load feed')
+              })
               .finally(()=> setLoading(false))
         }
 
