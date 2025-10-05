@@ -466,6 +466,35 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
     })
   }, [items, allSaved])
 
+  const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
+
+  // Early auth gate: do not render reels if not authenticated
+  if (!isAuthed) {
+    return (
+      <div className="reels-page" style={{display:'grid',placeItems:'center',padding:'32px'}}>
+        <div style={{
+          maxWidth:'520px',
+          width:'100%',
+          textAlign:'center',
+          background:'var(--color-surface)',
+          border:'1px solid var(--color-border)',
+          borderRadius:'16px',
+          padding:'32px',
+          boxShadow:'var(--shadow-md)'
+        }}>
+          <h1 style={{margin:'0 0 12px',fontSize:'1.4rem',fontWeight:800}}>Sign in to view reels</h1>
+            <p style={{margin:'0 0 20px',color:'var(--color-text-secondary)'}}>
+              You must be logged in to access and interact with Foodgram reels.
+            </p>
+            <div style={{display:'flex',gap:'10px',justifyContent:'center',flexWrap:'wrap'}}>
+              <Link to="/user/login" className="btn btn-primary">Sign In</Link>
+              <Link to="/register" className="btn">Create Account</Link>
+            </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="reels-page">
       {/* IG-like top header */}

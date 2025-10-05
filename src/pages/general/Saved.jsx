@@ -2,10 +2,39 @@ import React, { useEffect, useState } from 'react'
 import '../../styles/reels.css'
 import axios from 'axios'
 import ReelFeed from '../../components/ReelFeed'
+import { Link } from 'react-router-dom'
 
 const Saved = () => {
     const [ videos, setVideos ] = useState([])
     const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
+    const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
+
+    // NEW: auth gate (prevents loading saved list when logged out)
+    if (!isAuthed) {
+      return (
+        <div className="reels-page" style={{display:'grid',placeItems:'center',padding:'32px'}}>
+          <div style={{
+            maxWidth:'480px',
+            width:'100%',
+            textAlign:'center',
+            background:'var(--color-surface)',
+            border:'1px solid var(--color-border)',
+            borderRadius:'16px',
+            padding:'32px',
+            boxShadow:'var(--shadow-md)'
+          }}>
+            <h1 style={{margin:'0 0 12px',fontSize:'1.35rem',fontWeight:800}}>Sign in to view saved reels</h1>
+            <p style={{margin:'0 0 20px',color:'var(--color-text-secondary)'}}>
+              Your saved collection is available after you sign in.
+            </p>
+            <div style={{display:'flex',gap:'10px',justifyContent:'center'}}>
+              <Link to="/user/login" className="btn btn-primary">Sign In</Link>
+              <Link to="/register" className="btn">Register</Link>
+            </div>
+          </div>
+        </div>
+      )
+    }
 
     useEffect(() => {
         let cancelled = false

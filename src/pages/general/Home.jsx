@@ -7,51 +7,75 @@ import ReelFeed from '../../components/ReelFeed'
 const Home = () => {
     const [ videos, setVideos ] = useState([])
     const [ loading, setLoading ] = useState(true)
+    const [ shareOnly, setShareOnly ] = useState(false)
     const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
     const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
     const location = useLocation();
     const params = new URLSearchParams(location.search);
     const focusId = params.get('v') || ''
 
+    const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
+
     useEffect(() => {
-        setLoading(true)
-        axios.get(`${API_BASE}/api/food`)
-            .then(response => {
-                let items = response.data.foodItems || []
-
-                // Fisher-Yates shuffle for randomness each load
-                for (let i = items.length - 1; i > 0; i--) {
-                  const j = Math.floor(Math.random() * (i + 1))
-                  ;[items[i], items[j]] = [items[j], items[i]]
+        // NEW: block fetching when not authenticated
+        if (!isAuthed) {
+            setVideos([])
+            setShareOnly(false)
+            setLoading(false)
+            return
+        }
+        // NEW: share-only single reel fetch
+        async function fetchSingle(reelId) {
+            setLoading(true)
+            try {
+                const { data } = await axios.get(`${API_BASE}/api/food/${reelId}`)
+                if (data?.food?._id) {
+                    setVideos([data.food])
+                    setShareOnly(true)
+                    setLoading(false)
+                    return
                 }
+            } catch { /* fall through to full feed */ }
+            setShareOnly(false)
+            fetchAll()
+        }
 
-                // Recent upload handling (partner just uploaded)
-                try {
-                  const recentId = sessionStorage.getItem('recentUploadId')
-                  if (recentId) {
-                    const found = items.find(v => v._id === recentId)
-                    if (found) {
-                      // show ONLY the newly uploaded reel once
-                      setVideos([found])
-                      // remove marker so a refresh gives random feed
-                      setTimeout(() => {
-                        sessionStorage.removeItem('recentUploadId')
-                        sessionStorage.removeItem('recentUploadTs')
-                      }, 0)
-                      return
-                    } else {
-                      // not found (propagation delay) -> fall back to random full list
-                      sessionStorage.removeItem('recentUploadId')
-                      sessionStorage.removeItem('recentUploadTs')
+        async function fetchAll() {
+            setLoading(true)
+            axios.get(`${API_BASE}/api/food`)
+                .then(response => {
+                    let items = response.data.foodItems || []
+                    // shuffle only when not in shareOnly
+                    for (let i = items.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1))
+                        ;[items[i], items[j]] = [items[j], items[i]]
                     }
-                  }
-                } catch {}
+                    setVideos(items)
+                })
+                .catch(()=>{})
+                .finally(()=> setLoading(false))
+        }
 
-                setVideos(items)
-            })
-            .catch(() => { /* noop */ })
-            .finally(() => setLoading(false))
-    }, [API_BASE])
+        if (focusId) {
+            fetchSingle(focusId)
+        } else {
+            fetchAll()
+        }
+    }, [API_BASE, focusId, isAuthed])
+
+    function exitShareOnly() {
+        // remove ?v= param without reload
+        try {
+            const url = new URL(window.location.href)
+            url.searchParams.delete('v')
+            window.history.replaceState({}, '', url.toString())
+        } catch {}
+        setShareOnly(false)
+        // refetch full feed
+        axios.get(`${API_BASE}/api/food`).then(r=>{
+            setVideos(r.data.foodItems || [])
+        }).catch(()=>{})
+    }
 
     async function likeVideo(item) {
         // Guard: must be signed in as user
@@ -151,10 +175,9 @@ const Home = () => {
     }
 
     // Signed-out detection (local, fast)
-    const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
-
-    // Show a hero when signed out and no videos to show
-    if (!isAuthed && !loading && videos.length === 0) {
+    // (isAuthed already computed above)
+    if (!isAuthed && !loading) {
+        // Force hero (videos intentionally kept empty)
         return (
             <section className="landing-hero" role="region" aria-label="Welcome">
                 <div className="landing-hero__card">
@@ -202,14 +225,30 @@ const Home = () => {
     }
 
     return (
-        <ReelFeed
-            items={videos}
-            onLike={likeVideo}
-            onSave={saveVideo}
-            onDelete={deleteVideo}
-            emptyMessage="No videos available."
-            focusId={focusId}
-        />
+        <>
+            {shareOnly && (
+                <div style={{
+                    position:'fixed',top:8,left:8,zIndex:50,display:'flex',gap:'8px'
+                }}>
+                    <button
+                      onClick={exitShareOnly}
+                      className="btn btn-outline"
+                      style={{padding:'0 14px',height:'38px'}}
+                      aria-label="View full feed"
+                    >
+                      ← All Reels
+                    </button>
+                </div>
+            )}
+            <ReelFeed
+                items={videos}
+                onLike={likeVideo}
+                onSave={saveVideo}
+                onDelete={deleteVideo}
+                emptyMessage={shareOnly ? "Reel unavailable." : "No videos available."}
+                focusId={shareOnly ? videos?.[0]?._id : focusId}
+            />
+        </>
     )
 }
 
