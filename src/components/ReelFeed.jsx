@@ -35,13 +35,17 @@ const ReelFeed = ({
   const [commentText, setCommentText] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
   const [commentLikes, setCommentLikes] = useState({}) // commentId => true
-  const [muted, setMuted] = useState({})              // per-reel: true = muted, false = unmuted (default now false)
   const [noAudioNotified, setNoAudioNotified] = useState({})
   const [manualPaused, setManualPaused] = useState({}) // id => true if user paused
   const [shareFlash, setShareFlash] = useState({})     // id => true right after share
   const [shareModal, setShareModal] = useState({ open:false, item:null })
   const [sharingBusy, setSharingBusy] = useState(false)
   const [shareDebug, setShareDebug] = useState(false) // NEW debug flag
+  // NEW global audio state (true = sound on)
+  const [globalAudioOn, setGlobalAudioOn] = useState(() => {
+    try { return localStorage.getItem('globalAudioOn') !== 'false' } catch { return true }
+  })
+  // REMOVED: const [muted, setMuted] = useState({})
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -74,7 +78,7 @@ const ReelFeed = ({
                   if (!video.muted) {
                     // Autoplay with sound blocked: fallback to muted then retry
                     video.muted = true
-                    setMuted(prev => ({ ...prev, [id]: true }))
+                    setNoAudioNotified(prev => ({ ...prev, [id]: true }))
                     video.play().catch(()=>{})
                   }
                 })
@@ -124,27 +128,27 @@ const ReelFeed = ({
     if (!el) { videoRefs.current.delete(id); return }
     el.dataset.id = id
     videoRefs.current.set(id, el)
-    // default: unmuted (audible)
-    setMuted(prev => prev[id] === undefined ? { ...prev, [id]: false } : prev)
+    // Apply current global audio preference
+    el.muted = !globalAudioOn
   }
 
-  function toggleAudio(id) {
-    const vid = videoRefs.current.get(id)
-    setMuted(prev => {
-      const current = prev[id] ?? false
-      const next = !current
-      if (vid) {
-        vid.muted = next
-        if (!next) {
-          const p = vid.play?.()
-          if (p && p.catch) p.catch(()=>{})
-        }
-      }
-      return { ...prev, [id]: next }
+  // REMOVE old per-reel toggleAudio and per-reel muted map
+  function toggleGlobalAudio() {
+    setGlobalAudioOn(prev => {
+      const next = !prev
+      try { localStorage.setItem('globalAudioOn', String(next)) } catch {}
+      // apply to all current videos
+      videoRefs.current.forEach(v => { if (v) v.muted = !next })
+      return next
     })
   }
 
-  function togglePause(id) {
+  // Ensure any change to globalAudioOn re-syncs existing videos (covers dynamic list changes)
+  useEffect(() => {
+    videoRefs.current.forEach(v => { if (v) v.muted = !globalAudioOn })
+  }, [globalAudioOn])
+
+  const togglePause = id => {
     const vid = videoRefs.current.get(id)
     setManualPaused(prev => {
       const nowPaused = !prev[id]
@@ -618,7 +622,7 @@ const ReelFeed = ({
               ref={setVideoRef(item._id)}
               className="reel-video"
               src={item.video}
-              muted={!!muted[item._id]}
+              muted={!globalAudioOn}
               playsInline
               loop
               preload="metadata"
@@ -712,12 +716,12 @@ const ReelFeed = ({
 
                 <div className="reel-action-group">
                   <button
-                    className={`reel-action audio-action ${muted[item._id] === false ? 'is-on' : ''}`}
-                    aria-label={muted[item._id] === false ? 'Mute' : 'Unmute'}
-                    aria-pressed={muted[item._id] === false}
-                    onClick={() => toggleAudio(item._id)}
+                    className={`reel-action audio-action ${globalAudioOn ? 'is-on' : ''}`}
+                    aria-label={globalAudioOn ? 'Mute all reels' : 'Unmute all reels'}
+                    aria-pressed={globalAudioOn}
+                    onClick={toggleGlobalAudio}
                   >
-                    {muted[item._id] === false ? (
+                    {globalAudioOn ? (
                       <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
                         <path d="M5 9v6h4l5 5V4L9 9H5z"/><path d="M16 8.82a4 4 0 0 1 0 6.36"/><path d="M18.8 6a8 8 0 0 1 0 12"/>
                       </svg>
@@ -728,7 +732,7 @@ const ReelFeed = ({
                     )}
                   </button>
                   <div className="reel-action__count" aria-hidden="true">
-                    {muted[item._id] === false ? 'On' : 'Off'}
+                    {globalAudioOn ? 'On' : 'Off'}
                   </div>
                 </div>
 
