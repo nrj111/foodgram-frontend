@@ -73,7 +73,7 @@
   height: 100%;
   object-fit: cover;
   border-radius: var(--radius-sm);
-  background: #000;
+  background: var(--color-surface-alt);
 }
 
 .cart-info { display: grid; gap: var(--space-2); }
