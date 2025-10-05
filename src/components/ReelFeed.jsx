@@ -40,7 +40,8 @@ const ReelFeed = ({
   const [manualPaused, setManualPaused] = useState({}) // id => true if user paused
   const [shareFlash, setShareFlash] = useState({})     // id => true right after share
   const [shareModal, setShareModal] = useState({ open:false, item:null })
-  const [sharingBusy, setSharingBusy] = useState(false) // NEW: prevent rapid double share clicks
+  const [sharingBusy, setSharingBusy] = useState(false)
+  const [shareDebug, setShareDebug] = useState(false) // NEW debug flag
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -429,27 +430,23 @@ const ReelFeed = ({
     const id = idRaw || ''
     if (!id) return
     setShareFlash(prev => ({ ...prev, [id]: true }))
-    setTimeout(() => setShareFlash(prev => {
-      const n = { ...prev }; delete n[id]; return n
-    }), 900)
+    setTimeout(() => setShareFlash(prev => { const n = { ...prev }; delete n[id]; return n }), 900)
   }
 
-  function openShareModal(item, announce = false) {
+  function openShareModal(item, announce=false) {
     setShareModal({ open:true, item })
-    if (announce) {
-      window.toast?.('Share link ready – copy & send!', { type:'info' })
-    }
+    if (announce) window.toast?.('Share link ready', { type:'info' })
     setTimeout(() => {
       try {
         const el = document.querySelector('.share-link-input')
-        el?.focus?.()
-        el?.select?.()
+        el?.focus?.(); el?.select?.()
       } catch {}
     }, 40)
   }
 
   async function handleShareClick(e, item) {
     e.stopPropagation()
+    // Debounce rapid clicks while still guaranteeing at least one response
     if (sharingBusy) return
     const id = getItemId(item)
     if (!id) {
@@ -459,49 +456,52 @@ const ReelFeed = ({
     const url = buildShareUrl(item)
     const title = item?.name || 'Check this reel on Foodgram'
     const text = item?.description ? String(item.description).slice(0,120) : 'Delicious food reel'
-
-    // If browser has no share & no clipboard API -> just open modal
     const hasNative = typeof navigator !== 'undefined' && !!navigator.share
     const secure = typeof window !== 'undefined' ? window.isSecureContext : false
     setSharingBusy(true)
+    if (shareDebug) console.log('[share] click', { id, hasNative, secure, url })
+
+    // Strategy: optimistic native attempt; if not possible or fails => open modal immediately.
+    if (!hasNative) {
+      openShareModal(item, true)
+      // Attempt silent copy
+      try {
+        if (navigator?.clipboard?.writeText) {
+          await navigator.clipboard.writeText(url)
+          window.toast?.('Link copied', { type:'success' })
+          flashShare(id)
+        } else {
+          window.toast?.('Copy link manually', { type:'info' })
+        }
+      } catch {
+        window.toast?.('Copy blocked – long‑press to select', { type:'warning' })
+      } finally {
+        setSharingBusy(false)
+      }
+      return
+    }
+
+    // Native available:
+    if (!secure) {
+      // Many browsers block some native features on insecure contexts
+      window.toast?.('Insecure context – showing share link', { type:'warning' })
+      openShareModal(item, true)
+      setSharingBusy(false)
+      return
+    }
 
     try {
-      if (hasNative) {
-        // Native share attempt
-        try {
-          if (!secure) {
-            // Native share may still work but often limited on insecure contexts
-            window.toast?.('Insecure context: native share may be blocked, showing link', { type:'warning' })
-            openShareModal(item, true)
-            return
-          }
-          await navigator.share({ title, text, url })
-          window.toast?.('Shared', { type:'success' })
-          flashShare(id)
-          return
-        } catch (err) {
-          // Abort => user canceled; other => failed
-            if (err?.name === 'AbortError') {
-              window.toast?.('Share canceled – copy link instead', { type:'info' })
-            } else {
-              window.toast?.('Native share failed – showing link', { type:'warning' })
-            }
-            openShareModal(item, true)
-            return
-        }
+      await navigator.share({ title, text, url })
+      window.toast?.('Shared', { type:'success' })
+      flashShare(id)
+    } catch (err) {
+      if (shareDebug) console.warn('[share] native error', err)
+      if (err?.name === 'AbortError') {
+        window.toast?.('Share canceled – copy link instead', { type:'info' })
       } else {
-        // No native share; open modal + attempt silent clipboard copy if possible
-        openShareModal(item, true)
-        try {
-          if (navigator?.clipboard?.writeText) {
-            await navigator.clipboard.writeText(url)
-            window.toast?.('Link copied to clipboard', { type:'success' })
-            flashShare(id)
-          }
-        } catch {
-          // ignore – user can still copy manually
-        }
+        window.toast?.('Native share failed – link ready', { type:'warning' })
       }
+      openShareModal(item)
     } finally {
       setSharingBusy(false)
     }
@@ -509,8 +509,9 @@ const ReelFeed = ({
 
   async function copyShareLink() {
     if (!shareModal.item) return
-    const url = buildShareUrl(shareModal.item)
-    const id = getItemId(shareModal.item)
+    const item = shareModal.item
+    const id = getItemId(item)
+    const url = buildShareUrl(item)
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url)
@@ -527,16 +528,16 @@ const ReelFeed = ({
       window.toast?.('Link copied', { type:'success' })
       flashShare(id)
     } catch {
-      window.toast?.('Copy blocked by browser', { type:'error' })
+      window.toast?.('Copy blocked – select text manually', { type:'error' })
     }
   }
 
   async function nativeShareFromModal() {
     if (!shareModal.item) return
+    if (!navigator.share) { copyShareLink(); return }
     const item = shareModal.item
     const id = getItemId(item)
     const url = buildShareUrl(item)
-    if (!navigator.share) { copyShareLink(); return }
     try {
       await navigator.share({
         title: item.name || 'Check this reel on Foodgram',
@@ -557,7 +558,6 @@ const ReelFeed = ({
 
   function closeShare() { setShareModal({ open:false, item:null }) }
 
-  // Close modal on Escape
   useEffect(() => {
     if (!shareModal.open) return
     const onKey = (e) => { if (e.key === 'Escape') closeShare() }
