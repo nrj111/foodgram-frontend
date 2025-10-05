@@ -1295,7 +1295,16 @@
   z-index: 140;
   display: grid;
   place-items: center;
-  pointer-events: none;
+  /* FIX: allow interaction (was pointer-events:none) */
+  pointer-events: auto;
+}
+/* Prevent clicks leaking when dialog open */
+.share-layer * {
+  user-select: none;
+}
+.share-dialog {
+  /* ensure dialog itself accepts interaction even if parent styles change */
+  pointer-events: auto;
 }
 .share-backdrop {
   position: absolute;
