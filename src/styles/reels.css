@@ -1448,9 +1448,7 @@
    Reel Feed Skeleton (Light / Dark aware)
    Used when .reels-feed has class .is-loading
    ========================================= */
-.reels-feed.is-loading {
-  scroll-snap-type: none;
-}
+.reels-feed.is-loading { scroll-snap-type: none; }
 
 .reel-skel {
   position: relative;
@@ -1478,7 +1476,31 @@
   filter: brightness(1.02);
 }
 
-/* Text / meta placeholder group */
+.reel-skel-actions {
+  position: absolute;
+  right: 10px;
+  bottom: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 2;
+}
+
+.reel-skel-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background:
+    linear-gradient(110deg,
+      var(--skel-a, var(--color-surface-alt)) 25%,
+      var(--skel-b, var(--color-surface)) 40%,
+      var(--skel-a, var(--color-surface-alt)) 65%);
+  background-size: 200% 100%;
+  animation: skel-reel-shimmer 1.25s ease-in-out infinite;
+  box-shadow: 0 0 0 1px var(--color-border);
+  opacity: .9;
+}
+
 .reel-skel-lines {
   position: relative;
   z-index: 2;
@@ -1486,6 +1508,27 @@
   gap: 10px;
   width: 100%;
   max-width: 640px;
+}
+
+.reel-skel-author {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.reel-skel-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background:
+    linear-gradient(100deg,
+      var(--skel-a, var(--color-surface-alt)) 20%,
+      var(--skel-b, var(--color-surface)) 38%,
+      var(--skel-a, var(--color-surface-alt)) 60%);
+  background-size: 180% 100%;
+  animation: skel-reel-shimmer 1.25s ease-in-out infinite;
+  box-shadow: 0 0 0 1px var(--color-border);
 }
 
 .skeleton-bar {
@@ -1505,32 +1548,32 @@
 .skeleton-bar.small{ width: 35%; }
 
 @keyframes skel-reel-shimmer {
-  0%   { background-position: 100% 0; }
+  0% { background-position: 100% 0; }
   100% { background-position: -80% 0; }
 }
 
-/* Dark theme overrides (system) */
 @media (prefers-color-scheme: dark) {
   .reels-feed.is-loading .reel-skel-video,
+  .reels-feed.is-loading .reel-skel-circle,
+  .reels-feed.is-loading .reel-skel-avatar,
   .reels-feed.is-loading .skeleton-bar {
     --skel-a: #1e293b;
     --skel-b: #2c3a50;
     filter: none;
   }
 }
-/* Explicit dark attribute override */
 :root[data-theme='dark'] .reels-feed.is-loading .reel-skel-video,
+:root[data-theme='dark'] .reels-feed.is-loading .reel-skel-circle,
+:root[data-theme='dark'] .reels-feed.is-loading .reel-skel-avatar,
 :root[data-theme='dark'] .reels-feed.is-loading .skeleton-bar {
   --skel-a: #1e293b;
   --skel-b: #2c3a50;
   filter: none;
 }
 
-/* Reduced motion: disable shimmer */
 @media (prefers-reduced-motion: reduce) {
   .reel-skel-video,
-  .skeleton-bar {
-    animation: none;
-    background-position: 0 0;
-  }
+  .reel-skel-circle,
+  .reel-skel-avatar,
+  .skeleton-bar { animation: none; background-position: 0 0; }
 }

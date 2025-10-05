@@ -206,11 +206,18 @@ const Saved = () => {
             {Array.from({length:2}).map((_,i)=>(
               <div key={i} className="reel-skel">
                 <div className="reel-skel-video" />
+                <div className="reel-skel-actions">
+                  {Array.from({length:5}).map((_,c)=><div key={c} className="reel-skel-circle" />)}
+                </div>
                 <div className="reel-skel-lines">
+                  <div className="reel-skel-author">
+                    <div className="reel-skel-avatar" />
+                    <div className="skeleton-bar med" style={{width:'46%'}} />
+                  </div>
+                  <div className="skeleton-bar small" />
+                  <div className="skeleton-bar wide" />
                   <div className="skeleton-bar wide" />
                   <div className="skeleton-bar med" />
-                  <div className="skeleton-bar small" />
-                  <div className="skeleton-bar wide" style={{marginTop:'8px'}} />
                 </div>
               </div>
             ))}
