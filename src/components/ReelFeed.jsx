@@ -8,7 +8,17 @@ import { Link, useNavigate } from 'react-router-dom'
 // - onSave: (item) => void | Promise<void>
 // - onDelete: (item) => void | Promise<void>
 // - emptyMessage: string
-const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No videos yet.', focusId, allSaved = false, publicSingle = false }) => {
+const ReelFeed = ({
+  items = [],
+  onLike,
+  onSave,
+  onDelete,
+  emptyMessage = 'No videos yet.',
+  focusId,
+  allSaved = false,
+  publicSingle = false,
+  publicReadOnly = false            // NEW
+}) => {
   const videoRefs = useRef(new Map())
   const [sheetOpen, setSheetOpen] = useState(false)
   const [added, setAdded] = useState({}) // id => true for brief animation
@@ -471,34 +481,7 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
   }, [items, allSaved])
 
   const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
-  const readOnly = !isAuthed && publicSingle
-
-  // Auth gate: block only if not authed AND not publicSingle
-  if (!isAuthed && !publicSingle) {
-    return (
-      <div className="reels-page" style={{display:'grid',placeItems:'center',padding:'32px'}}>
-        <div style={{
-          maxWidth:'520px',
-          width:'100%',
-          textAlign:'center',
-          background:'var(--color-surface)',
-          border:'1px solid var(--color-border)',
-          borderRadius:'16px',
-          padding:'32px',
-          boxShadow:'var(--shadow-md)'
-        }}>
-          <h1 style={{margin:'0 0 12px',fontSize:'1.4rem',fontWeight:800}}>Sign in to view reels</h1>
-            <p style={{margin:'0 0 20px',color:'var(--color-text-secondary)'}}>
-              You must be logged in to access and interact with Foodgram reels.
-            </p>
-            <div style={{display:'flex',gap:'10px',justifyContent:'center',flexWrap:'wrap'}}>
-              <Link to="/user/login" className="btn btn-primary">Sign In</Link>
-              <Link to="/register" className="btn">Create Account</Link>
-            </div>
-        </div>
-      </div>
-    )
-  }
+  const readOnly = publicReadOnly || (!isAuthed && publicSingle)   // NEW unified read-only
 
   return (
     <div className="reels-page">
@@ -973,6 +956,23 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
                   className="share-btn primary"
                   onClick={nativeShare}
                 >
+                  {navigator.share ? 'System Share' : 'Copy Again'}
+                </button>
+                <button
+                  type="button"
+                  className="share-btn outline"
+                  onClick={closeShare}
+                >Done</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default ReelFeed
                   {navigator.share ? 'System Share' : 'Copy Again'}
                 </button>
                 <button

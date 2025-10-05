@@ -17,7 +17,6 @@ const Home = () => {
     const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
 
     useEffect(() => {
-        // Public single reel (share link) allowed even if not authed
         async function fetchSingle(reelId, isPublic=false) {
             setLoading(true)
             try {
@@ -51,12 +50,9 @@ const Home = () => {
 
         if (!isAuthed) {
             if (focusId) {
-                // public single reel
-                fetchSingle(focusId, true)
+                fetchSingle(focusId, true)   // public single reel
             } else {
-                setVideos([])
-                setShareOnly(false)
-                setLoading(false)
+                fetchAll()                   // NEW: load full public feed (read-only)
             }
             return
         }
@@ -176,46 +172,6 @@ const Home = () => {
         }
     }
 
-    // Signed-out detection (local, fast)
-    // (isAuthed already computed above)
-    if (!isAuthed && !loading && !focusId) {
-        // Force hero (videos intentionally kept empty)
-        return (
-            <section className="landing-hero" role="region" aria-label="Welcome">
-                <div className="landing-hero__card">
-                    <div className="landing-hero__brand" aria-hidden="true">
-                        <img src={LOGO_URL} alt="" />
-                    </div>
-                    <h1 className="landing-hero__title">Discover delicious reels near you</h1>
-                    <p className="landing-hero__subtitle">
-                        Scroll through bite-sized videos from food partners. Like, save, and add to cart in a tap.
-                    </p>
-
-                    <div className="landing-hero__badges" aria-label="Highlights">
-                        <span className="badge">Fast</span>
-                        <span className="badge">Tasty</span>
-                        <span className="badge">Local</span>
-                    </div>
-
-                    <ul className="landing-hero__features" aria-label="Why you’ll love it">
-                        <li>Explore reels tailored to your taste</li>
-                        <li>Save your favorites for later</li>
-                        <li>Order directly from partners</li>
-                    </ul>
-
-                    <div className="landing-hero__actions">
-                        <Link to="/user/login" className="btn">Sign in</Link>
-                        <Link to="/register" className="btn btn-primary">Create account</Link>
-                    </div>
-
-                    <div className="landing-hero__alt">
-                        Are you a food partner? <Link to="/food-partner/register" className="btn btn-outline">Become a partner</Link>
-                    </div>
-                </div>
-            </section>
-        )
-    }
-
     // Optional lightweight loading
     if (loading && videos.length === 0) {
         return (
@@ -228,8 +184,7 @@ const Home = () => {
 
     return (
         <>
-            {shareOnly && (
-              isAuthed && (
+            {shareOnly && isAuthed && (
                 <div style={{ position:'fixed',top:8,left:8,zIndex:50,display:'flex',gap:'8px' }}>
                   <button
                     onClick={exitShareOnly}
@@ -238,8 +193,7 @@ const Home = () => {
                     aria-label="View full feed"
                   >← All Reels</button>
                 </div>
-              )
-            )}
+              )}
             <ReelFeed
               items={videos}
               onLike={likeVideo}
@@ -247,7 +201,8 @@ const Home = () => {
               onDelete={deleteVideo}
               emptyMessage={shareOnly ? "Reel unavailable." : "No videos available."}
               focusId={shareOnly ? videos?.[0]?._id : focusId}
-              publicSingle={!isAuthed && !!focusId}  // NEW
+              publicSingle={!!focusId && !isAuthed}
+              publicReadOnly={!isAuthed}          // NEW
             />
         </>
     )
