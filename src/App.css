@@ -1,68 +1,14 @@
-* {
-  margin: 0%;
-  padding: 0%;
-  box-sizing: border-box;
+@tailwind components;
+@layer components {
+  .toast-container { @apply fixed top-4 left-1/2 -translate-x-1/2 grid gap-2 z-[9999] pointer-events-none; }
+  .toast { @apply relative pointer-events-auto bg-gray-800 text-white border border-white/10 rounded-lg px-4 py-2 text-sm shadow-card animate-toast-in overflow-hidden; }
+  .toast::after { content:""; @apply absolute left-0 bottom-0 h-[3px] rounded-r bg-gradient-to-r from-[var(--color-accent,#10b981)] to-[var(--color-accent-hover,#059669)] animate-toast-bar; }
+  .toast.success { @apply bg-emerald-700 border-white/15; }
+  .toast.error { @apply bg-red-800 border-white/15; }
 }
-
-html,
-body {
-  height: 100%;
-  width: 100%;
-}
-
-/* Toasts */
-.toast-container {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: grid;
-  gap: 8px;
-  z-index: 9999;
-  pointer-events: none;
-}
-
-.toast {
-  pointer-events: auto;
-  position: relative;
-  overflow: hidden;
-  background: #1f2937;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.25);
-  animation: toast-in .18s ease-out;
-}
-
-.toast::after {
-  content:"";
-  position:absolute;
-  left:0; bottom:0;
-  height:3px;
-  background: linear-gradient(90deg,var(--color-accent,#10b981), var(--color-accent-hover,#059669));
-  animation: toast-bar var(--toast-dur,3s) linear forwards;
-  border-radius: 0 2px 2px 0;
-}
-
-.toast.success { background: #065f46; border-color: rgba(255,255,255,.15); }
-.toast.error { background: #7f1d1d; border-color: rgba(255,255,255,.15); }
-
-@keyframes toast-in {
-  from { transform: translate(-50%, -8px); opacity: .6; }
-  to { transform: translate(-50%, 0); opacity: 1; }
-}
-
-@keyframes toast-bar {
-  from { width:100%; }
-  to { width:0; }
-}
-
-html.app-prep { opacity: 0; }
-html.app-ready { opacity: 1; transition: opacity .5s ease; }
-
-@media (prefers-reduced-motion: reduce) {
-  html.app-prep, html.app-ready { transition: none; }
-  .toast::after { animation: none; display: none; }
+html.app-prep { opacity:0; }
+html.app-ready { transition:opacity .5s ease; opacity:1; }
+@media (prefers-reduced-motion:reduce){
+  html.app-ready { transition:none; }
+  .toast::after { animation:none; display:none; }
 }

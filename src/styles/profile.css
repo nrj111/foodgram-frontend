@@ -459,3 +459,52 @@
   .user-avatar { animation: none; transition: none; }
 }
 
+@tailwind components;
+@layer components {
+  .profile-page { @apply max-w-[1100px] mx-auto flex flex-col gap-6 p-6 pb-8 animate-profile-fade; }
+  .profile-header,.ig-profile-header { @apply bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md shadow-sm p-6 grid gap-6; }
+  .profile-meta { @apply grid grid-cols-[120px_1fr] gap-6 items-center; }
+  .profile-avatar { @apply w-[120px] h-[120px] rounded-full object-cover bg-[var(--color-surface-alt)] border-2 border-[var(--color-border)]; }
+  .profile-business { @apply text-xl font-bold; }
+  .profile-address,.ig-profile-address { @apply text-[1.05rem] text-[var(--color-text-secondary)]; }
+  .profile-stats { @apply grid grid-cols-2 gap-6 border-t border-dashed border-[var(--color-border)] pt-6; }
+  .profile-stat { @apply grid gap-2 justify-items-center; }
+  .profile-stat-value { @apply text-4xl font-extrabold; }
+  .profile-stat-label { @apply text-lg text-[var(--color-text-secondary)]; }
+  .profile-grid { @apply grid grid-cols-3 gap-[2px] bg-[var(--color-border)]; }
+  .profile-grid-item { @apply relative aspect-square bg-black overflow-hidden cursor-pointer transition; }
+  .profile-grid-item.empty { @apply cursor-default; }
+  .profile-grid-video { @apply w-full h-full object-cover transition; }
+  .profile-grid-item:hover .profile-grid-video { @apply brightness-75 scale-[1.015]; }
+  .profile-grid-overlay { @apply absolute inset-0 flex items-end justify-center p-1.5 opacity-0 transition; background:linear-gradient(180deg,rgba(0,0,0,0)40%,rgba(0,0,0,.55)100%); }
+  .profile-grid-item:hover .profile-grid-overlay { @apply opacity-100; }
+  .overlay-stats { @apply inline-flex gap-4 text-white text-[.75rem] font-semibold tracking-wide; }
+  .user-profile-page { @apply max-w-[900px] mx-auto p-6; }
+  .user-profile-card { @apply bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md shadow-sm p-6 grid gap-4 text-center justify-items-center; }
+  .user-avatar-wrap { @apply relative w-32 h-32; }
+  .user-avatar { @apply w-32 h-32 rounded-full border-2 border-[var(--color-border)] bg-[var(--color-surface-alt)] grid place-items-center font-extrabold text-[2.5rem] text-[var(--color-text)] overflow-hidden animate-avatar-pop; }
+  .user-avatar-add { @apply absolute right-0 bottom-0 w-9 h-9 rounded-full border border-[var(--color-border)] bg-[var(--color-accent)] text-white font-extrabold text-lg grid place-items-center cursor-pointer shadow-md transition; }
+  .user-avatar-add:hover { @apply -translate-y-[2px] brightness-105; }
+  .user-info { @apply grid gap-1.5; }
+  .user-name { @apply text-xl font-extrabold; }
+  .user-handle { @apply text-[var(--color-text-secondary)]; }
+  .ig-profile-top { @apply grid grid-cols-[140px_1fr] gap-6 items-start md:grid-cols-[140px_1fr] sm:grid-cols-1; }
+  .ig-profile-avatar { @apply w-[140px] h-[140px] rounded-full bg-[var(--color-surface-alt)] border-2 border-[var(--color-border)] grid place-items-center font-bold text-[2.4rem] text-[var(--color-text-secondary)] animate-avatar-pop; }
+  .ig-profile-username { @apply text-xl font-bold tracking-wide; }
+  .ig-profile-row { @apply flex flex-wrap items-center gap-4; }
+  .ig-profile-stats-line { @apply flex flex-wrap gap-10 text-[var(--color-text)]; }
+  .ig-profile-stats-line .value { @apply font-bold; }
+  .ig-profile-bio { @apply text-sm leading-snug; }
+  .ig-action-btn { @apply h-[34px] px-4 rounded-md font-semibold text-[.85rem] tracking-wide inline-flex items-center gap-1.5 bg-[var(--color-accent)] text-white border border-transparent transition; }
+  .ig-action-btn.secondary { @apply bg-[var(--color-surface-alt)] text-[var(--color-text)] border-[var(--color-border)]; }
+  .ig-action-btn.outline { @apply bg-transparent text-[var(--color-text)] border-[var(--color-border)]; }
+  .ig-action-btn:hover { @apply -translate-y-[2px]; }
+  .ig-profile-tabs { @apply flex gap-1 border-t border-[var(--color-border)] mt-1 pt-1; }
+  .ig-profile-tab { @apply px-4 py-2 text-[.8rem] font-semibold tracking-[.15em] uppercase text-[var(--color-text-secondary)] relative; }
+  .ig-profile-tab.is-active { @apply text-[var(--color-text)]; }
+  .ig-profile-tab.is-active::after { content:""; @apply absolute left-4 right-4 bottom-1 h-[2px] rounded bg-[var(--color-text)]; }
+  @media (max-width:900px){ .profile-meta { @apply grid-cols-[96px_1fr]; }.profile-avatar { @apply w-24 h-24; } }
+  @media (max-width:640px){ .ig-profile-top { @apply grid-cols-1; } .ig-profile-avatar { @apply w-[100px] h-[100px]; } }
+  @media (max-width:420px){ .profile-meta { @apply grid-cols-[72px_1fr]; } .profile-avatar { @apply w-[72px] h-[72px]; } .profile-stat-value { @apply text-2xl; } .ig-profile-username { @apply text-lg; } }
+}
+

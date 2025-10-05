@@ -1,49 +1,49 @@
-@import './theme.css';
-
-/* Container */
-.create-food-page {
-  min-height: 100dvh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: var(--space-6) var(--space-4);
-  background: radial-gradient(1200px 600px at 10% -10%, var(--color-surface-alt) 0%, transparent 45%),
-              radial-gradient(1200px 600px at 110% 110%, var(--color-surface-alt) 0%, transparent 45%),
-              var(--color-bg);
+@tailwind components;
+@layer components {
+  .create-food-page { @apply min-h-dvh flex items-start justify-center p-6 px-4 bg-[radial-gradient(1200px_600px_at_10%_-10%,var(--color-surface-alt)_0%,transparent_45%),radial-gradient(1200px_600px_at_110%_110%,var(--color-surface-alt)_0%,transparent_45%),var(--color-bg)] animate-profile-fade; }
+  .create-food-card { @apply w-full max-w-[720px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md shadow-md p-6 flex flex-col gap-5 transition; }
+  .create-food-header { @apply grid gap-2; }
+  .create-food-title { @apply text-xl font-bold md:text-2xl; }
+  .create-food-subtitle { @apply text-[var(--color-text-secondary)] text-sm; }
+  .create-food-form { @apply grid gap-5 md:gap-6; }
+  .field-group { @apply grid gap-1.5; }
+  .field-group label { @apply text-[.70rem] uppercase tracking-wider font-bold text-[var(--color-text-secondary)]; }
+  .field-group input[type=text],
+  .field-group input[type=number],
+  .field-group textarea { @apply border border-[var(--color-border)] bg-[var(--color-surface-alt)] rounded-sm px-3 py-2 text-[var(--color-text)] outline-none transition; }
+  .field-group textarea { @apply resize-y min-h-[96px]; }
+  .field-group input:focus-visible,
+  .field-group textarea:focus-visible { @apply border-[var(--color-accent)] bg-[var(--color-surface)] ring-0; }
+  .file-input-hidden { @apply sr-only; }
+  .file-dropzone { @apply border border-dashed border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface-alt)_70%,transparent)] rounded-sm p-6 cursor-pointer grid place-items-center text-center gap-3 text-[var(--color-text-secondary)] transition relative overflow-hidden; }
+  .file-dropzone:hover { @apply border-[var(--color-accent)] bg-[var(--color-surface-alt)]; }
+  .file-dropzone:active { @apply translate-y-[2px]; }
+  .file-dropzone-text { @apply text-[var(--color-text)] font-semibold; }
+  .file-hint { @apply text-[.7rem]; }
+  .file-chip { @apply mt-3 flex flex-wrap items-center gap-3 w-full bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-sm px-3 py-2; }
+  .file-chip-name { @apply font-semibold truncate; }
+  .file-chip-size { @apply text-[.75rem] text-[var(--color-text-secondary)] ml-auto; }
+  .file-chip-actions { @apply inline-flex gap-2; }
+  .btn-ghost { @apply bg-transparent border border-transparent text-[var(--color-accent)] rounded-full px-3 py-1 font-bold text-xs tracking-wide cursor-pointer transition; }
+  .btn-ghost:hover { @apply bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)]; }
+  .btn-ghost.danger { @apply text-[var(--color-danger)]; }
+  .btn-ghost.danger:hover { @apply bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)]; }
+  .video-preview { @apply w-full rounded-sm overflow-hidden border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] grid place-items-center animate-share-pop; }
+  .video-preview-el { @apply w-full h-full object-contain bg-black; }
+  .form-actions { @apply flex gap-3; }
+  .btn-primary { @apply bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold tracking-wide px-4 py-3 rounded-sm transition disabled:opacity-60 disabled:cursor-not-allowed; }
+  .upload-overlay { @apply fixed inset-0 bg-black/55 z-[1000] grid place-items-center text-white font-bold gap-3; }
+  .spinner { @apply relative grid place-items-center w-[84px] h-[84px] animate-spin-progress; --ring-thickness:6px; }
+  .spinner::before { content:""; @apply absolute inset-0 rounded-full; background:conic-gradient(var(--color-accent)0deg,var(--color-accent-hover) calc(var(--progress)*1deg),rgba(255,255,255,.15) calc(var(--progress)*1deg),rgba(255,255,255,.08) 360deg); -webkit-mask:radial-gradient(circle at center,transparent 0 calc(50% - var(--ring-thickness)),#000 calc(50% - var(--ring-thickness) + 1px) 100%); mask:radial-gradient(circle at center,transparent 0 calc(50% - var(--ring-thickness)),#000 calc(50% - var(--ring-thickness) + 1px) 100%); }
+  .spinner::after { content:""; @apply absolute inset-[calc(var(--ring-thickness)+3px)] rounded-[14px]; background:url('https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925') center/100% 100% no-repeat; }
+  [data-uploading='true'] .create-food-card { @apply blur-[1px] brightness-90; }
 }
 
-.create-food-card {
-  width: 100%;
-  max-width: 720px; /* mobile-first but centered card */
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  padding: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .create-food-page.fade-page,
+  .video-preview { animation: none; }
 }
-
-.create-food-header { display: grid; gap: var(--space-2); }
-.create-food-title { font-size: 1.35rem; font-weight: 700; }
-.create-food-subtitle { color: var(--color-text-secondary); font-size: .95rem; }
-
-/* Form */
-.create-food-form { display: grid; gap: var(--space-5); }
-@media (min-width: 960px) {
-  .create-food-form { gap: var(--space-6); }
-}
-
-.field-group { display: grid; gap: 6px; }
-.field-group label {
-  font-size: .75rem;
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  font-weight: 700;
-  color: var(--color-text-secondary);
-}
-
 /* Inputs */
 .field-group input[type="text"],
 .field-group input[type="file"],
@@ -262,6 +262,48 @@
 @keyframes preview-in { from { opacity:0; transform: scale(.97); } to { opacity:1; transform: scale(1); } }
 
 [data-uploading='true'] .create-food-card { filter: blur(1px) brightness(.9); transition: filter .4s ease; }
+
+/* Tailwind CSS Components */
+@tailwind components;
+@layer components {
+  .create-food-page { @apply min-h-dvh flex items-start justify-center p-6 px-4 bg-[radial-gradient(1200px_600px_at_10%_-10%,var(--color-surface-alt)_0%,transparent_45%),radial-gradient(1200px_600px_at_110%_110%,var(--color-surface-alt)_0%,transparent_45%),var(--color-bg)] animate-profile-fade; }
+  .create-food-card { @apply w-full max-w-[720px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md shadow-md p-6 flex flex-col gap-5 transition; }
+  .create-food-header { @apply grid gap-2; }
+  .create-food-title { @apply text-xl font-bold md:text-2xl; }
+  .create-food-subtitle { @apply text-[var(--color-text-secondary)] text-sm; }
+  .create-food-form { @apply grid gap-5 md:gap-6; }
+  .field-group { @apply grid gap-1.5; }
+  .field-group label { @apply text-[.70rem] uppercase tracking-wider font-bold text-[var(--color-text-secondary)]; }
+  .field-group input[type=text],
+  .field-group input[type=number],
+  .field-group textarea { @apply border border-[var(--color-border)] bg-[var(--color-surface-alt)] rounded-sm px-3 py-2 text-[var(--color-text)] outline-none transition; }
+  .field-group textarea { @apply resize-y min-h-[96px]; }
+  .field-group input:focus-visible,
+  .field-group textarea:focus-visible { @apply border-[var(--color-accent)] bg-[var(--color-surface)] ring-0; }
+  .file-input-hidden { @apply sr-only; }
+  .file-dropzone { @apply border border-dashed border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-surface-alt)_70%,transparent)] rounded-sm p-6 cursor-pointer grid place-items-center text-center gap-3 text-[var(--color-text-secondary)] transition relative overflow-hidden; }
+  .file-dropzone:hover { @apply border-[var(--color-accent)] bg-[var(--color-surface-alt)]; }
+  .file-dropzone:active { @apply translate-y-[2px]; }
+  .file-dropzone-text { @apply text-[var(--color-text)] font-semibold; }
+  .file-hint { @apply text-[.7rem]; }
+  .file-chip { @apply mt-3 flex flex-wrap items-center gap-3 w-full bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-sm px-3 py-2; }
+  .file-chip-name { @apply font-semibold truncate; }
+  .file-chip-size { @apply text-[.75rem] text-[var(--color-text-secondary)] ml-auto; }
+  .file-chip-actions { @apply inline-flex gap-2; }
+  .btn-ghost { @apply bg-transparent border border-transparent text-[var(--color-accent)] rounded-full px-3 py-1 font-bold text-xs tracking-wide cursor-pointer transition; }
+  .btn-ghost:hover { @apply bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)]; }
+  .btn-ghost.danger { @apply text-[var(--color-danger)]; }
+  .btn-ghost.danger:hover { @apply bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)]; }
+  .video-preview { @apply w-full rounded-sm overflow-hidden border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)] grid place-items-center animate-share-pop; }
+  .video-preview-el { @apply w-full h-full object-contain bg-black; }
+  .form-actions { @apply flex gap-3; }
+  .btn-primary { @apply bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold tracking-wide px-4 py-3 rounded-sm transition disabled:opacity-60 disabled:cursor-not-allowed; }
+  .upload-overlay { @apply fixed inset-0 bg-black/55 z-[1000] grid place-items-center text-white font-bold gap-3; }
+  .spinner { @apply relative grid place-items-center w-[84px] h-[84px] animate-spin-progress; --ring-thickness:6px; }
+  .spinner::before { content:""; @apply absolute inset-0 rounded-full; background:conic-gradient(var(--color-accent)0deg,var(--color-accent-hover) calc(var(--progress)*1deg),rgba(255,255,255,.15) calc(var(--progress)*1deg),rgba(255,255,255,.08) 360deg); -webkit-mask:radial-gradient(circle at center,transparent 0 calc(50% - var(--ring-thickness)),#000 calc(50% - var(--ring-thickness) + 1px) 100%); mask:radial-gradient(circle at center,transparent 0 calc(50% - var(--ring-thickness)),#000 calc(50% - var(--ring-thickness) + 1px) 100%); }
+  .spinner::after { content:""; @apply absolute inset-[calc(var(--ring-thickness)+3px)] rounded-[14px]; background:url('https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925') center/100% 100% no-repeat; }
+  [data-uploading='true'] .create-food-card { @apply blur-[1px] brightness-90; }
+}
 
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
