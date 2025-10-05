@@ -104,16 +104,21 @@ const ReelFeed = ({
     }
   }, [focusId, items])
 
+  // REMOVE local effect that directly applied theme to document:
+  // useEffect(() => { ... apply(themePref) ... }, [themePref])
+  // (Global App now manages data-theme)
+
+  // Sync with global updates (theme-updated custom event)
   useEffect(() => {
-    // Apply stored theme preference
-    function apply(pref) {
-      const root = document.documentElement
-      root.removeAttribute('data-theme')
-      if (pref === 'light') root.setAttribute('data-theme', 'light')
-      else if (pref === 'dark') root.setAttribute('data-theme', 'dark')
+    function onTheme(e) {
+      if (e?.detail) setThemePref(e.detail)
+      else {
+        try { setThemePref(localStorage.getItem('themePreference') || 'system') } catch {}
+      }
     }
-    apply(themePref)
-  }, [themePref])
+    window.addEventListener('theme-updated', onTheme)
+    return () => window.removeEventListener('theme-updated', onTheme)
+  }, [])
 
   const setVideoRef = id => el => {
     if (!el) { videoRefs.current.delete(id); return }
@@ -247,9 +252,15 @@ const ReelFeed = ({
     } catch {}
   }
 
+  // Update function now delegates to global
   function updateTheme(pref) {
+    if (typeof window !== 'undefined' && typeof window.setThemePreference === 'function') {
+      window.setThemePreference(pref)
+    } else {
+      // fallback (should not normally run)
+      try { localStorage.setItem('themePreference', pref) } catch {}
+    }
     setThemePref(pref)
-    try { localStorage.setItem('themePreference', pref) } catch {}
   }
 
   // Initialize liked/saved from server user flags + localStorage (no inference from counts)
