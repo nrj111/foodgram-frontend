@@ -143,7 +143,16 @@
 /* Grid */
 .profile-grid {
   display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:2px; background: var(--color-border);
+  gap:2px;
+  /* LIGHT THEME: white gap separators */
+  background: var(--color-surface);
+}
+/* Dark/system dark keep subtle neutral border tone */
+@media (prefers-color-scheme: dark) {
+  .profile-grid { background: #1f2933; }
+}
+:root[data-theme='dark'] .profile-grid {
+  background: #1f2933;
 }
 .profile-grid-item {
   position:relative; aspect-ratio:1/1; background:#000;

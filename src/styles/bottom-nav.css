@@ -8,17 +8,16 @@
   z-index: 50;
   backdrop-filter: blur(22px) saturate(160%);
   -webkit-backdrop-filter: blur(22px) saturate(160%);
-  /* REPLACED color-mix() with stable gradient */
+  /* LIGHT THEME: translucent white frosted glass */
   background:
     linear-gradient(180deg,
-      rgba(15,23,42,0.82) 0%,
-      rgba(15,23,42,0.94) 100%);
-  /* REPLACED color-mix() border */
-  border-top: 1px solid rgba(255,255,255,0.09);
+      rgba(255,255,255,0.72) 0%,
+      rgba(255,255,255,0.88) 100%);
+  border-top: 1px solid rgba(0,0,0,.08);
   box-shadow:
-    0 -1px 0 rgba(255,255,255,.04),
-    0 -4px 12px -4px rgba(0,0,0,.28),
-    0 -12px 28px -10px rgba(0,0,0,.45);
+    0 -1px 0 rgba(255,255,255,.6),
+    0 -4px 10px -4px rgba(0,0,0,.18),
+    0 -14px 32px -12px rgba(0,0,0,.20);
 }
 
 .bottom-nav::before {
@@ -27,12 +26,12 @@
   left: 0; right: 0; top: 0;
   height: 1px;
   background: linear-gradient(90deg,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,.25) 40%,
-    rgba(255,255,255,.25) 60%,
-    rgba(255,255,255,0) 100%);
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,.20) 40%,
+    rgba(0,0,0,.20) 60%,
+    rgba(0,0,0,0) 100%);
   pointer-events: none;
-  opacity: .55;
+  opacity: .35;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -53,7 +52,29 @@
       rgba(255,255,255,.22) 45%,
       rgba(255,255,255,.22) 55%,
       rgba(255,255,255,0) 100%);
+    opacity:.55;
   }
+}
+
+/* Attribute dark override (when user forces dark while system is light) */
+:root[data-theme='dark'] .bottom-nav {
+  background:
+    linear-gradient(180deg,
+      rgba(15,23,42,0.78) 0%,
+      rgba(30,41,59,0.88) 100%);
+  border-top: 1px solid rgba(255,255,255,.12);
+  box-shadow:
+    0 -1px 0 rgba(255,255,255,.05),
+    0 -6px 18px -8px rgba(0,0,0,.6),
+    0 -20px 38px -16px rgba(0,0,0,.65);
+}
+:root[data-theme='dark'] .bottom-nav::before {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.22) 45%,
+    rgba(255,255,255,.22) 55%,
+    rgba(255,255,255,0) 100%);
+  opacity:.55;
 }
 
 .bottom-nav__inner {
