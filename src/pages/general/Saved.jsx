@@ -201,10 +201,19 @@ const Saved = () => {
 
     if (loading) {
       return (
-        <div className="reels-page" style={{display:'grid',placeItems:'center'}}>
-          <div style={{display:'grid',gap:12,justifyItems:'center'}}>
-            <div className="fg-spinner" style={{'--size':'56px'}} aria-hidden="true"></div>
-            <div style={{fontSize:'.8rem',color:'var(--color-text-secondary)'}}>Loading saved…</div>
+        <div className="reels-page">
+          <div className="reels-feed is-loading" role="status" aria-busy="true" aria-label="Loading saved reels">
+            {Array.from({length:2}).map((_,i)=>(
+              <div key={i} className="reel-skel">
+                <div className="reel-skel-video" />
+                <div className="reel-skel-lines">
+                  <div className="skeleton-bar wide" />
+                  <div className="skeleton-bar med" />
+                  <div className="skeleton-bar small" />
+                  <div className="skeleton-bar wide" style={{marginTop:'8px'}} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )

@@ -180,9 +180,25 @@ const Home = () => {
     // Optional lightweight loading
     if (loading && videos.length === 0) {
         return (
-            <div className="app-loading-screen" role="status" aria-busy="true" aria-label="Loading Foodgram">
-                <div className="fg-spinner" aria-hidden="true"></div>
-                <p className="fg-loading-text">Loading Foodgram…</p>
+            <div className="reels-page">
+              <header className="ig-header" aria-hidden="true">
+                <div className="ig-brand">
+                  <img className="ig-brand-logo" src={LOGO_URL} alt="" />
+                </div>
+              </header>
+              <div className="reels-feed is-loading" role="status" aria-busy="true" aria-label="Loading feed">
+                {Array.from({length:3}).map((_,i)=>(
+                  <div key={i} className="reel-skel">
+                    <div className="reel-skel-video" />
+                    <div className="reel-skel-lines">
+                      <div className="skeleton-bar wide" />
+                      <div className="skeleton-bar med" />
+                      <div className="skeleton-bar small" />
+                      <div className="skeleton-bar wide" style={{marginTop:'8px'}} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
         )
     }
