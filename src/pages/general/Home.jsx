@@ -17,15 +17,8 @@ const Home = () => {
     const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
 
     useEffect(() => {
-        // NEW: block fetching when not authenticated
-        if (!isAuthed) {
-            setVideos([])
-            setShareOnly(false)
-            setLoading(false)
-            return
-        }
-        // NEW: share-only single reel fetch
-        async function fetchSingle(reelId) {
+        // Public single reel (share link) allowed even if not authed
+        async function fetchSingle(reelId, isPublic=false) {
             setLoading(true)
             try {
                 const { data } = await axios.get(`${API_BASE}/api/food/${reelId}`)
@@ -35,32 +28,41 @@ const Home = () => {
                     setLoading(false)
                     return
                 }
-            } catch { /* fall through to full feed */ }
+            } catch {/* ignore */}
             setShareOnly(false)
-            fetchAll()
+            if (!isPublic) fetchAll()
+            else setLoading(false)
         }
 
         async function fetchAll() {
             setLoading(true)
             axios.get(`${API_BASE}/api/food`)
-                .then(response => {
-                    let items = response.data.foodItems || []
-                    // shuffle only when not in shareOnly
-                    for (let i = items.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1))
-                        ;[items[i], items[j]] = [items[j], items[i]]
-                    }
-                    setVideos(items)
-                })
-                .catch(()=>{})
-                .finally(()=> setLoading(false))
+              .then(response => {
+                let items = response.data.foodItems || []
+                for (let i = items.length - 1; i > 0; i--) {
+                  const j = Math.floor(Math.random() * (i + 1))
+                  ;[items[i], items[j]] = [items[j], items[i]]
+                }
+                setVideos(items)
+              })
+              .catch(()=>{})
+              .finally(()=> setLoading(false))
         }
 
-        if (focusId) {
-            fetchSingle(focusId)
-        } else {
-            fetchAll()
+        if (!isAuthed) {
+            if (focusId) {
+                // public single reel
+                fetchSingle(focusId, true)
+            } else {
+                setVideos([])
+                setShareOnly(false)
+                setLoading(false)
+            }
+            return
         }
+
+        if (focusId) fetchSingle(focusId)
+        else fetchAll()
     }, [API_BASE, focusId, isAuthed])
 
     function exitShareOnly() {
@@ -176,7 +178,7 @@ const Home = () => {
 
     // Signed-out detection (local, fast)
     // (isAuthed already computed above)
-    if (!isAuthed && !loading) {
+    if (!isAuthed && !loading && !focusId) {
         // Force hero (videos intentionally kept empty)
         return (
             <section className="landing-hero" role="region" aria-label="Welcome">
@@ -227,26 +229,25 @@ const Home = () => {
     return (
         <>
             {shareOnly && (
-                <div style={{
-                    position:'fixed',top:8,left:8,zIndex:50,display:'flex',gap:'8px'
-                }}>
-                    <button
-                      onClick={exitShareOnly}
-                      className="btn btn-outline"
-                      style={{padding:'0 14px',height:'38px'}}
-                      aria-label="View full feed"
-                    >
-                      ← All Reels
-                    </button>
+              isAuthed && (
+                <div style={{ position:'fixed',top:8,left:8,zIndex:50,display:'flex',gap:'8px' }}>
+                  <button
+                    onClick={exitShareOnly}
+                    className="btn btn-outline"
+                    style={{padding:'0 14px',height:'38px'}}
+                    aria-label="View full feed"
+                  >← All Reels</button>
                 </div>
+              )
             )}
             <ReelFeed
-                items={videos}
-                onLike={likeVideo}
-                onSave={saveVideo}
-                onDelete={deleteVideo}
-                emptyMessage={shareOnly ? "Reel unavailable." : "No videos available."}
-                focusId={shareOnly ? videos?.[0]?._id : focusId}
+              items={videos}
+              onLike={likeVideo}
+              onSave={saveVideo}
+              onDelete={deleteVideo}
+              emptyMessage={shareOnly ? "Reel unavailable." : "No videos available."}
+              focusId={shareOnly ? videos?.[0]?._id : focusId}
+              publicSingle={!isAuthed && !!focusId}  // NEW
             />
         </>
     )

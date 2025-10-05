@@ -8,7 +8,7 @@ import { Link, useNavigate } from 'react-router-dom'
 // - onSave: (item) => void | Promise<void>
 // - onDelete: (item) => void | Promise<void>
 // - emptyMessage: string
-const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No videos yet.', focusId, allSaved = false }) => {
+const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No videos yet.', focusId, allSaved = false, publicSingle = false }) => {
   const videoRefs = useRef(new Map())
   const [sheetOpen, setSheetOpen] = useState(false)
   const [added, setAdded] = useState({}) // id => true for brief animation
@@ -168,6 +168,7 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
   }
 
   function addToCart(item) {
+    if (readOnly) { window.toast?.('Sign in to add to cart', { type:'info' }); return }
     try {
       const cart = JSON.parse(localStorage.getItem('cart') || '[]')
       const idx = cart.findIndex((x) => x._id === item._id)
@@ -268,6 +269,7 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
   }, [items, allSaved])
 
   async function handleLike(item) {
+    if (readOnly) { window.toast?.('Sign in to like', { type:'info' }); return }
     const optimistic = !liked[item._id]
     setLiked(p => ({ ...p, [item._id]: optimistic }))
     const result = await (onLike ? onLike(item) : Promise.resolve({ ok: true, liked: optimistic }))
@@ -282,6 +284,7 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
   }
 
   async function handleSave(item) {
+    if (readOnly) { window.toast?.('Sign in to save', { type:'info' }); return }
     const optimistic = !saved[item._id]
     setSaved(p => ({ ...p, [item._id]: optimistic }))
     const result = await (onSave ? onSave(item) : Promise.resolve({ ok: true, saved: optimistic }))
@@ -311,6 +314,7 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
   }
 
   async function openComments(foodId) {
+    if (readOnly) { window.toast?.('Sign in to view comments', { type:'info' }); return }
     setCommentSheet({ open: true, foodId })
     setComments([])
     setLoadingComments(true)
@@ -467,9 +471,10 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
   }, [items, allSaved])
 
   const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
+  const readOnly = !isAuthed && publicSingle
 
-  // Early auth gate: do not render reels if not authenticated
-  if (!isAuthed) {
+  // Auth gate: block only if not authed AND not publicSingle
+  if (!isAuthed && !publicSingle) {
     return (
       <div className="reels-page" style={{display:'grid',placeItems:'center',padding:'32px'}}>
         <div style={{
@@ -573,6 +578,8 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
                     className={`reel-action like-action ${liked[item._id] ? 'is-liked' : ''}`}
                     aria-label="Like"
                     aria-pressed={!!liked[item._id]}
+                    disabled={readOnly}
+                    style={readOnly ? { opacity:.55, cursor:'not-allowed' } : undefined}
                   >
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
@@ -587,6 +594,8 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
                     onClick={onSave ? () => handleSave(item) : undefined}
                     aria-label="Bookmark"
                     aria-pressed={!!saved[item._id]}
+                    disabled={readOnly}
+                    style={readOnly ? { opacity:.55, cursor:'not-allowed' } : undefined}
                   >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" />
@@ -600,6 +609,8 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
                     className="reel-action"
                     aria-label="Comments"
                     onClick={() => openComments(item._id)}
+                    disabled={readOnly}
+                    style={readOnly ? { opacity:.55, cursor:'not-allowed' } : undefined}
                   >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
@@ -756,6 +767,8 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
                     className={`btn-cta primary ${added[item._id] ? 'is-added' : ''}`}
                     onClick={() => addToCart(item)}
                     aria-label="Add to cart"
+                    disabled={readOnly}
+                    style={readOnly ? { opacity:.55, cursor:'not-allowed' } : undefined}
                   >
                     {added[item._id] ? 'Added!' : 'Add to Cart'}
                   </button>
