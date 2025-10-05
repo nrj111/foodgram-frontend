@@ -1432,3 +1432,24 @@
   background: var(--color-surface-alt);
   color: var(--color-text);
 }
+
+/* Subtle busy state styling for share button (optional visual feedback when disabled) */
+.reel-action.share-action[aria-busy="true"] {
+  position: relative;
+  pointer-events: none;
+  opacity: .6;
+}
+.reel-action.share-action[aria-busy="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.4), transparent 65%);
+  animation: share-busy 0.9s linear infinite;
+}
+@keyframes share-busy {
+  0% { transform: scale(.85); opacity:.8; }
+  70% { transform: scale(1.05); opacity:.15; }
+  100% { transform: scale(.85); opacity:.8; }
+}
