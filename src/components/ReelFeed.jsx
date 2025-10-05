@@ -44,6 +44,11 @@ const ReelFeed = ({
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
 
+  // FIX: add missing auth / read-only flags (were removed => ReferenceError)
+  const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
+  const readOnly = publicReadOnly || (!isAuthed && publicSingle)
+  // Optionally could listen to storage for auth changes (omitted for brevity)
+
   // derive profile display
   const profileName = typeof window !== 'undefined' ? (localStorage.getItem('profileName') || 'Your Profile') : 'Your Profile'
   const profileEmail = typeof window !== 'undefined' ? (localStorage.getItem('profileEmail') || '') : ''
