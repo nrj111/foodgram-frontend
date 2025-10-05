@@ -1,7 +1,6 @@
 import React from 'react'
 
-import './App.css'
-import './styles/theme.css'
+import './index.css'            // NEW: Tailwind entry (replaces ./App.css + per-page css)
 import AppRoutes from './routes/AppRoutes'
 
 function App() {
@@ -59,4 +58,5 @@ function App() {
   )
 }
 
+export default App
 export default App
