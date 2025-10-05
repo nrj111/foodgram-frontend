@@ -29,6 +29,7 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
   const [noAudioNotified, setNoAudioNotified] = useState({})
   const [manualPaused, setManualPaused] = useState({}) // id => true if user paused
   const [shareFlash, setShareFlash] = useState({})     // id => true right after share
+  const [shareModal, setShareModal] = useState({ open:false, item:null }) // NEW
   const navigate = useNavigate()
   const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
   const LOGO_URL = 'https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925'
@@ -391,57 +392,62 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
     }
   }
 
-  function handleShare(item) {
+  function openShare(item) {
+    setShareModal({ open:true, item })
+  }
+  function closeShare() {
+    setShareModal({ open:false, item:null })
+  }
+  function buildShareUrl(item) {
+    const origin = (typeof window !== 'undefined' && window.location?.origin) || 'https://foodgram.app'
+    return `${origin}/?v=${encodeURIComponent(item._id)}`
+  }
+  function flashShare(itemId) {
+    setShareFlash(prev => ({ ...prev, [itemId]: true }))
+    setTimeout(() => setShareFlash(prev => {
+      const n = { ...prev }; delete n[itemId]; return n
+    }), 900)
+  }
+  async function copyShareLink() {
+    if (!shareModal.item) return
+    const url = buildShareUrl(shareModal.item)
     try {
-      const origin = (typeof window !== 'undefined' && window.location?.origin) || 'https://foodgram.app'
-      const url = `${origin}/?v=${encodeURIComponent(item._id)}`
-      const title = item.name || 'Check this reel on Foodgram'
-      const text = item.description ? item.description.slice(0, 120) : 'Delicious food reel'
-      const doFlash = () => {
-        setShareFlash(prev => ({ ...prev, [item._id]: true }))
-        setTimeout(() => setShareFlash(prev => {
-          const n = { ...prev }; delete n[item._id]; return n
-        }), 900)
-      }
-
-      if (navigator.share) {
-        navigator.share({ title, text, url })
-          .then(() => {
-            window.toast?.('Shared', { type: 'success' })
-            doFlash()
-          })
-          .catch(err => {
-            if (err?.name !== 'AbortError') fallbackCopy()
-          })
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url)
       } else {
-        fallbackCopy()
+        const ta = document.createElement('textarea')
+        ta.value = url
+        ta.style.position='fixed'
+        ta.style.opacity='0'
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
       }
-
-      function fallbackCopy() {
-        if (navigator.clipboard?.writeText) {
-          navigator.clipboard.writeText(url)
-            .then(() => {
-              window.toast?.('Link copied', { type: 'success' })
-              doFlash()
-            })
-            .catch(() => {
-              window.toast?.('Copy failed', { type: 'error' })
-            })
-        } else {
-          // legacy fallback
-            const ta = document.createElement('textarea')
-            ta.value = url
-            ta.style.position = 'fixed'
-            ta.style.opacity = '0'
-            document.body.appendChild(ta)
-            ta.select()
-            try { document.execCommand('copy'); window.toast?.('Link copied', { type: 'success' }); doFlash() }
-            catch { window.toast?.('Copy failed', { type: 'error' }) }
-            finally { document.body.removeChild(ta) }
-        }
-      }
+      window.toast?.('Link copied', { type:'success' })
+      flashShare(shareModal.item._id)
     } catch {
-      window.toast?.('Share unavailable', { type: 'error' })
+      window.toast?.('Copy failed', { type:'error' })
+    }
+  }
+  async function nativeShare() {
+    if (!shareModal.item) return
+    const url = buildShareUrl(shareModal.item)
+    const item = shareModal.item
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: item.name || 'Check this reel on Foodgram',
+          text: item.description ? item.description.slice(0,120) : 'Delicious food reel',
+          url
+        })
+        window.toast?.('Shared', { type:'success' })
+        flashShare(item._id)
+      } catch (e) {
+        if (e?.name !== 'AbortError') window.toast?.('Share cancelled', { type:'info' })
+      }
+    } else {
+      copyShareLink()
     }
   }
 
@@ -577,7 +583,7 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
                   <button
                     className={`reel-action share-action ${shareFlash[item._id] ? 'is-flash' : ''}`}
                     aria-label="Share reel"
-                    onClick={() => handleShare(item)}
+                    onClick={() => openShare(item)}
                   >
                     <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
                       <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/>
@@ -894,6 +900,46 @@ const ReelFeed = ({ items = [], onLike, onSave, onDelete, emptyMessage = 'No vid
               />
               <button type="submit" disabled={!commentText.trim()} className="comments-send">Post</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Share modal */}
+      {shareModal.open && shareModal.item && (
+        <div className="share-layer" role="dialog" aria-modal="true" aria-label="Share reel">
+          <div className="share-backdrop" onClick={closeShare} />
+          <div className="share-dialog">
+            <header className="share-head">
+              <h2 className="share-title">Share Reel</h2>
+              <button className="share-close" aria-label="Close share dialog" onClick={closeShare}>✕</button>
+            </header>
+            <div className="share-body">
+              <p className="share-name">{shareModal.item.name}</p>
+              <div className="share-link-row">
+                <input
+                  className="share-link-input"
+                  value={buildShareUrl(shareModal.item)}
+                  readOnly
+                  onFocus={e=>e.target.select()}
+                  aria-label="Share link"
+                />
+                <button type="button" className="share-btn" onClick={copyShareLink}>Copy</button>
+              </div>
+              <div className="share-actions-row">
+                <button
+                  type="button"
+                  className="share-btn primary"
+                  onClick={nativeShare}
+                >
+                  {navigator.share ? 'System Share' : 'Copy Again'}
+                </button>
+                <button
+                  type="button"
+                  className="share-btn outline"
+                  onClick={closeShare}
+                >Done</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
