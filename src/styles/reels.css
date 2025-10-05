@@ -1,110 +1,109 @@
-@tailwind components;
-@layer components {
-  .reels-page { @apply h-dvh bg-[var(--color-bg)] overflow-hidden; }
-  .reels-feed { @apply h-full w-full overflow-y-auto snap-y snap-mandatory scroll-smooth; }
-  .reel { @apply relative h-dvh w-full snap-start bg-black; }
-  .reel-video { @apply absolute inset-0 w-full h-full object-cover bg-black; }
-  .reel-overlay { @apply absolute inset-0 flex items-end pointer-events-none; }
-  .reel-overlay-gradient { @apply absolute inset-0; background:linear-gradient(180deg,rgba(0,0,0,.25)0%,rgba(0,0,0,.05)30%,rgba(0,0,0,.35)65%,rgba(0,0,0,.65)100%); }
-  .reel-content { @apply relative w-full flex flex-col gap-4 px-6 pb-24 pr-[4.5rem] pt-6 pointer-events-auto md:p-9; }
-  .reel-description { @apply text-white text-base leading-snug line-clamp-2 max-w-[90ch] drop-shadow; }
-  .reel-description.is-expanded { @apply line-clamp-none overflow-visible; }
-  .reel-title { @apply text-white font-extrabold text-[1.05rem] mt-[6px] mb-1 drop-shadow; }
-  .reel-price { @apply text-white font-extrabold mt-[6px] mb-[2px] drop-shadow; }
-  .reel-more { @apply underline underline-offset-2 bg-transparent text-white font-medium cursor-pointer px-0; }
-  .reel-actions { @apply absolute flex flex-col gap-[14px] right-2.5 bottom-24 pointer-events-auto; }
-  .reel-action { @apply w-12 h-12 grid place-items-center rounded-full bg-black/40 backdrop-blur-sm text-white border border-white/15 shadow-md relative transition; }
-  .reel-action:active { @apply translate-y-[2px]; }
-  .reel-action.like-action.is-liked { @apply animate-like-pop bg-gradient-to-b from-rose-500 to-pink-600 border-pink-300/50; }
-  .reel-action.save-action.is-saved { @apply animate-save-pop bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] border-[var(--color-accent)]/60; }
-  .reel-action.is-saved svg path,
-  .reel-action.like-action.is-liked svg path { fill:currentColor; stroke:currentColor; }
-  .reel-action.share-action.is-flash { @apply animate-share-pop bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] border-[var(--color-accent)]/60 shadow-card; }
-  .reel-action.audio-action.is-on { @apply animate-audio-pop bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] border-[var(--color-accent)]/60; }
-  .reel-action.delete-action { @apply bg-gradient-to-br from-[#b5002f] to-[#6d001c] border-white/20; }
-  .reel-action.delete-action:hover { @apply bg-gradient-to-br from-[#ff2d55] to-[#b5002f] -translate-y-[2px] shadow-card; }
-  .reel-action__count { @apply text-white text-[11px] text-center font-medium; }
-  .reel-action-group { @apply flex flex-col items-center gap-1 text-white; }
-  .empty-state { @apply absolute inset-0 grid place-items-center text-white; }
-  .ig-header { @apply fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 text-white z-40 pointer-events-none; }
-  .ig-brand { @apply font-extrabold tracking-wide text-[1.15rem] drop-shadow pointer-events-auto; }
-  .ig-brand-logo { @apply h-9 w-auto object-contain block; }
-  .ig-actions { @apply inline-flex gap-2 pointer-events-auto; }
-  .ig-icon-btn { @apply w-10 h-10 grid place-items-center rounded-full bg-black/40 text-white border border-white/20 backdrop-blur-sm; }
+@import './theme.css';
 
-  /* Paused indicator */
-  .reel-paused-indicator { @apply absolute inset-0 grid place-items-center pointer-events-none animate-paused-fade z-30; }
-  .reel-paused-circle { @apply w-[92px] h-[92px] rounded-full bg-black/55 backdrop-blur-md grid place-items-center text-white relative animate-paused-pulse; box-shadow:0 4px 18px -4px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.15) inset; }
-  .reel-paused-hint { @apply absolute bottom-[22%] text-[.75rem] tracking-[.18em] font-bold uppercase text-white/85 drop-shadow animate-hint-fade; }
-  .reel-video.is-paused { @apply brightness-[.6] saturate-[.9] transition; }
-
-  /* Comments */
-  .comments-layer { @apply fixed inset-0 z-[120] grid place-items-end pointer-events-none; }
-  .comments-backdrop { @apply absolute inset-0 bg-black/55 backdrop-blur-sm pointer-events-auto animate-comments-slide; }
-  .comments-panel { @apply relative w-full max-h-[78vh] bg-[color-mix(in_srgb,var(--color-bg)_92%,#000_8%)] rounded-t-[18px] flex flex-col overflow-hidden shadow-lg pointer-events-auto animate-comments-slide; }
-  .comments-head { @apply flex items-center gap-3 px-4 pt-3 pb-2 border-b border-border; }
-  .comments-title { @apply text-[.85rem] tracking-[.18em] uppercase font-bold text-[var(--color-text-secondary)]; }
-  .comments-close { @apply mr-auto text-[var(--color-text-secondary)] bg-transparent text-xl cursor-pointer; }
-  .comments-scroll { @apply flex-1 overflow-y-auto px-4 pt-2 pb-1 flex flex-col gap-3.5; }
-  .comments-loading,.comments-empty { @apply text-center text-[var(--color-text-secondary)] text-[.85rem] py-6; }
-  .comment-row { @apply grid grid-cols-[40px_1fr] gap-2.5 animate-comment-in; }
-  .comment-avatar { @apply w-10 h-10 rounded-full bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] text-white font-bold grid place-items-center text-sm shadow; }
-  .comment-body { @apply flex flex-col gap-0.5; }
-  .comment-meta { @apply flex items-center gap-1.5 text-[.7rem] tracking-wide uppercase text-[var(--color-text-secondary)] font-semibold; }
-  .comment-user { @apply text-[var(--color-text)] font-bold text-[.72rem]; }
-  .comment-text { @apply m-0 text-[.9rem] leading-tight text-[var(--color-text)]; }
-  .comment-like-btn { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-text-secondary)] border border-border text-[.7rem] tracking-wide uppercase transition; }
-  .comment-like-btn.is-liked { @apply bg-gradient-to-br from-rose-500 to-pink-600 text-white border-pink-400/60 animate-like-pop; }
-  .comments-input-bar { @apply flex items-center gap-2 px-3 py-2 border-t border-border bg-[color-mix(in_srgb,var(--color-bg)_95%,#000_5%)] pb-[calc(env(safe-area-inset-bottom,0)+10px)]; }
-  .comments-input-bar input { @apply flex-1 bg-[var(--color-surface-alt)] border border-border rounded-full px-4 py-2 text-sm outline-none transition; }
-  .comments-input-bar input:focus-visible { @apply border-[var(--color-accent)] bg-[var(--color-surface)]; }
-  .comments-send { @apply bg-[var(--color-accent)] text-white font-bold text-[.8rem] tracking-wide px-4 py-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition; }
-  .comments-send:not(:disabled):hover { @apply brightness-105 -translate-y-[2px]; }
-
-  /* Share modal */
-  .share-layer { @apply fixed inset-0 z-[140] grid place-items-center pointer-events-auto; }
-  .share-backdrop { @apply absolute inset-0 bg-black/55 backdrop-blur-sm animate-share-pop pointer-events-auto; }
-  .share-dialog { @apply relative w-[min(480px,92%)] bg-[color-mix(in_srgb,var(--color-bg)_95%,#000_5%)] border border-border rounded-2xl flex flex-col overflow-hidden shadow-card animate-share-pop; }
-  .share-head { @apply flex items-center gap-2 px-4 pt-3 pb-2 border-b border-border; }
-  .share-title { @apply text-[.85rem] tracking-[.18em] uppercase font-bold text-[var(--color-text-secondary)]; }
-  .share-close { @apply ml-auto text-[var(--color-text-secondary)] bg-transparent text-lg cursor-pointer; }
-  .share-body { @apply grid gap-3 px-4 pt-4 pb-5; }
-  .share-name { @apply font-semibold text-sm text-[var(--color-text)] leading-snug break-words; }
-  .share-link-row { @apply flex gap-2; }
-  .share-link-input { @apply flex-1 border border-border bg-[var(--color-surface-alt)] text-[var(--color-text)] rounded-lg px-3 py-2 text-xs tracking-wide outline-none transition; }
-  .share-link-input:focus-visible { @apply border-[var(--color-accent)] bg-[var(--color-surface)]; }
-  .share-actions-row { @apply flex flex-wrap gap-2; }
-  .share-btn { @apply h-10 px-5 rounded-full text-xs font-semibold tracking-wide bg-[var(--color-surface)] border border-border text-[var(--color-text)] inline-flex items-center justify-center gap-1 transition; }
-  .share-btn:hover { @apply -translate-y-[2px] bg-[var(--color-surface-alt)]; }
-  .share-btn.primary { @apply bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] border-transparent text-white shadow; }
-  .share-btn.primary:hover { @apply brightness-105; }
-
-  /* Loader */
-  .app-loading-screen { @apply fixed inset-0 grid place-items-center gap-5 text-center z-[2000] p-8 bg-[var(--color-bg)]; }
-  .fg-loading-text { @apply font-semibold tracking-wide text-[var(--color-text-secondary)]; }
-  .fg-spinner { @apply relative grid place-items-center animate-spin-progress drop-shadow lg:drop-shadow-lg; --size:84px; width:84px; height:84px; --ring-thickness:6px; }
-  .fg-spinner::before { content:""; @apply absolute inset-0 rounded-full; background:conic-gradient(var(--color-accent)0deg,var(--color-accent-hover) calc(var(--progress)*1deg),rgba(255,255,255,.15) calc(var(--progress)*1deg),rgba(255,255,255,.08) 360deg); -webkit-mask:radial-gradient(circle at center,transparent 0 calc(50% - var(--ring-thickness)),#000 calc(50% - var(--ring-thickness) + 1px) 100%); mask:radial-gradient(circle at center,transparent 0 calc(50% - var(--ring-thickness)),#000 calc(50% - var(--ring-thickness) + 1px) 100%); }
-  .fg-spinner::after { content:""; @apply absolute rounded-[14px]; inset:calc(var(--ring-thickness) + 3px); background:url('https://ik.imagekit.io/nrj/Foodgram%20Logo_3xjVvij1vu?updatedAt=1758693456925') center/100% 100% no-repeat; }
-
-  /* CTAs */
-  .reel-ctas { @apply grid grid-cols-2 gap-3 max-w-[420px]; }
-  .btn-cta { @apply inline-flex items-center justify-center h-11 rounded-full font-extrabold tracking-wide px-5 w-full border border-transparent transition; }
-  .btn-cta.primary { @apply bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] text-white shadow-card; }
-  .btn-cta.primary.is-added { @apply relative animate-cta-pop; }
-  .btn-cta.primary.is-added::before { content:""; @apply absolute inset-[-2px] rounded-full; background:radial-gradient(ellipse at center,rgba(255,255,255,.35),transparent 60%); animation:cta-shine .9s ease; }
-  .btn-cta.secondary { @apply bg-black/40 text-white border-white/20 shadow-sm; }
-
-  /* Follow */
-  .reel-author { @apply grid grid-cols-[auto_1fr_auto] items-center gap-2.5 max-w-[640px]; }
-  .reel-avatar { @apply w-8 h-8 rounded-full bg-black/40 border border-white/15 text-white grid place-items-center font-extrabold; }
-  .reel-author-name { @apply text-white font-bold truncate drop-shadow; }
-  .btn-follow { @apply h-8 px-3 rounded-full bg-white text-black font-extrabold text-xs tracking-wide cursor-pointer transition; }
-  .btn-follow.is-following { @apply bg-[color-mix(in_srgb,#fff_85%,var(--color-accent)_15%)] text-black; }
-  .btn-follow:hover { @apply -translate-y-[2px] brightness-95; }
-
-  /* Audio halo */
-  .audio-action.is-on::after { content:""; @apply absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,.35),transparent_65%)] animate-hint-fade; }
+/* Page container ensures full viewport and background */
+.reels-page {
+  height: 100dvh;
+  background: var(--color-bg);
+  overflow: hidden; /* parent hides overscroll glow on iOS */
 }
+
+/* Vertical feed with snap scrolling */
+.reels-feed {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Each reel takes full viewport */
+.reel {
+  position: relative;
+  height: 100dvh;
+  width: 100%;
+  scroll-snap-align: start;
+  background: #000; /* fallback while video loads */
+}
+
+.reel-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* cover entire screen */
+  object-position: center;
+  background: #000;
+}
+
+/* Overlay: content sits on top of video */
+.reel-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end; /* content near bottom */
+  pointer-events: none; /* allow click-through except controls */
+}
+
+/* Subtle top-to-bottom gradient so text is readable on any video */
+.reel-overlay-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(0,0,0,0.25) 0%,
+    rgba(0,0,0,0.05) 30%,
+    rgba(0,0,0,0.35) 65%,
+    rgba(0,0,0,0.65) 100%
+  );
+}
+
+.reel-content {
+  position: relative;
+  width: 100%;
+  padding: var(--space-6);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0) + 72px); /* make space for bottom nav */
+  display: flex;
+  flex-direction: column;
+  padding-right: 4.5rem;
+  gap: var(--space-4);
+  pointer-events: auto; /* enable button click */
+}
+
+/* Truncated to two lines */
+.reel-description {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.4);
+  font-size: 1rem;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 90ch;
+  max-height: calc(1.3em * 2); /* Fallback max-height for browsers ignoring -webkit-line-clamp */
+}
+
+.reel-title {
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.05rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,.45);
+  margin: 6px 0 4px 0;
+}
+
+.reel-price {
+  color: #fff;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0,0,0,.45);
+  margin: 6px 0 2px 0;
+}
+
+.reel-description.is-expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  max-height: none;
 }
 
 .reel-more {
@@ -911,6 +910,7 @@
   overflow: hidden;
   animation: comments-slide .35s cubic-bezier(.4,0,.2,1);
   pointer-events: auto;
+  will-change: transform, opacity;
 }
 @keyframes comments-slide {
   from { transform: translateY(28px); opacity: 0; }
@@ -1227,7 +1227,14 @@
 }
 
 /* Remove layout shift caused by paused overlay inside flex */
-.reel-overlay { position: absolute; inset: 0; display: flex; align-items: flex-end; }
+/* FIX: merged duplicate .reel-overlay definition to preserve pointer-events:none */
+.reel-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none; /* keep original intent */
+}
 .reel-overlay > .reel-paused-indicator { align-self: stretch; }
 
 .reel-action.share-action.is-flash {
