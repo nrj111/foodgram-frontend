@@ -12,9 +12,11 @@ const Profile = () => {
     const [ following, setFollowing ] = useState(false)               // new local follow state
     const [ activeTab, setActiveTab ] = useState('reels')             // future-ready
     const [ avatar, setAvatar ] = useState(() => localStorage.getItem('partnerAvatarUrl') || '')
+    const [ loadingProfile, setLoadingProfile ] = useState(true) // NEW
     const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
 
     useEffect(() => {
+        setLoadingProfile(true) // NEW
         axios.get(`${API_BASE}/api/food-partner/${id}`)
             .then(response => {
                 setProfile(response.data.foodPartner)
@@ -23,6 +25,7 @@ const Profile = () => {
             .catch(err => {
                 window.toastError?.(err, 'Failed to load partner profile')
             })
+            .finally(()=> setLoadingProfile(false)) // NEW
     }, [ id, API_BASE ])
 
     const isOwner = (() => {
@@ -63,30 +66,85 @@ const Profile = () => {
     const totalLikes = videos.reduce((sum, v) => sum + (v.likeCount || 0), 0)
     const totalSaves = videos.reduce((sum, v) => sum + (v.savesCount || 0), 0)
 
+    if (loadingProfile) {
+      return (
+        <main className="profile-page fade-page">
+          <section className="profile-header ig-profile-header">
+            <div className="ig-profile-top">
+              <div className="ig-profile-avatar-wrap">
+                <div className="ig-profile-avatar skeleton" />
+              </div>
+              <div className="ig-profile-main">
+                <div className="skeleton line lg" style={{width:'40%'}} />
+                <div className="ig-profile-stats-line" aria-hidden="true">
+                  <div className="skeleton pill" style={{width:70,height:18}} />
+                  <div className="skeleton pill" style={{width:70,height:18}} />
+                  <div className="skeleton pill" style={{width:70,height:18}} />
+                </div>
+                <div className="skeleton line" style={{width:'60%'}} />
+                <div className="skeleton line" style={{width:'50%'}} />
+              </div>
+            </div>
+            <nav className="ig-profile-tabs" aria-hidden="true">
+              <div className="skeleton pill" style={{width:72,height:28}} />
+              <div className="skeleton pill" style={{width:72,height:28}} />
+            </nav>
+          </section>
+          <hr className="profile-sep" />
+          <section className="profile-grid" aria-label="Loading videos">
+            {Array.from({length:6}).map((_,i)=>(
+              <div key={i} className="profile-grid-item">
+                <div className="skeleton" style={{width:'100%',height:'100%'}} />
+              </div>
+            ))}
+          </section>
+        </main>
+      )
+    }
+
     return (
         <main className="profile-page fade-page">
             {/* Instagram-like header */}
             <section className="profile-header ig-profile-header">
                 <div className="ig-profile-top">
-                    <div className="ig-profile-avatar-wrap" onClick={handleAvatarPick}>
-                        {avatar
-                          ? <img className="ig-profile-avatar" src={avatar} alt="" />
-                          : <div className="ig-profile-avatar is-empty" aria-label="No avatar">
-                              <span className="avatar-letter">{(profile?.name||'P').charAt(0).toUpperCase()}</span>
-                              {isOwner && <button type="button" className="avatar-add-btn" aria-label="Add profile photo" onClick={handleAvatarPick}>+</button>}
-                            </div>}
-                        {!avatar && !isOwner && (
-                          <div className="ig-profile-avatar placeholder" />
-                        )}
-                        <input
-                          ref={avatarInputRef}
-                          type="file"
-                          accept="image/*"
-                          hidden
-                          onChange={onAvatarFile}
-                        />
+                    <div
+                      className="ig-profile-avatar-wrap"
+                      onClick={isOwner ? handleAvatarPick : undefined}
+                    >
+                      {avatar ? (
+                        <img className="ig-profile-avatar" src={avatar} alt="" />
+                      ) : (
+                        isOwner ? (
+                          <div className="ig-profile-avatar is-empty" aria-label="No avatar">
+                            <span className="avatar-letter">
+                              {(profile?.name || 'P').charAt(0).toUpperCase()}
+                            </span>
+                            <button
+                              type="button"
+                              className="avatar-add-btn"
+                              aria-label="Add profile photo"
+                              onClick={(e) => { e.stopPropagation(); handleAvatarPick(); }}
+                            >+</button>
+                          </div>
+                        ) : (
+                          <div
+                            className="ig-profile-avatar placeholder"
+                            aria-label="No avatar"
+                          >
+                            <span className="avatar-letter">
+                              {(profile?.name || 'P').charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )
+                      )}
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={onAvatarFile}
+                      />
                     </div>
-
                     <div className="ig-profile-main">
                         <div className="ig-profile-row">
                             <h1 className="ig-profile-username">{profile?.name || 'Partner'}</h1>

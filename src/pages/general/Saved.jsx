@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 
 const Saved = () => {
     const [ videos, setVideos ] = useState([])
+    const [ loading, setLoading ] = useState(true) // NEW
     const API_BASE = import.meta.env?.VITE_API_BASE || 'https://foodgram-backend.vercel.app'
     const isAuthed = typeof window !== 'undefined' && !!localStorage.getItem('profileType')
 
@@ -65,6 +66,8 @@ const Saved = () => {
               window.toastError?.(err, 'Failed to load saved reels')
               await loadLocalFallback()
             }
+          } finally {
+            if (!cancelled) setLoading(false) // NEW
           }
         }
 
@@ -95,6 +98,8 @@ const Saved = () => {
             }
           } catch (err) {
             window.toastError?.(err, 'Failed offline saved load')
+          } finally {
+            if (!cancelled) setLoading(false) // NEW ensures stop if fallback used
           }
         }
 
@@ -192,6 +197,17 @@ const Saved = () => {
             window.toast?.('Delete failed', { type: 'error' })
             return { ok: false }
         }
+    }
+
+    if (loading) {
+      return (
+        <div className="reels-page" style={{display:'grid',placeItems:'center'}}>
+          <div style={{display:'grid',gap:12,justifyItems:'center'}}>
+            <div className="fg-spinner" style={{'--size':'56px'}} aria-hidden="true"></div>
+            <div style={{fontSize:'.8rem',color:'var(--color-text-secondary)'}}>Loading saved…</div>
+          </div>
+        </div>
+      )
     }
 
     return (
