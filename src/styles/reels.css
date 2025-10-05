@@ -1486,47 +1486,47 @@
   z-index: 2;
 }
 
+/* UPDATED: clearer circle styling (was gradient too similar to backdrop) */
 .reel-skel-circle {
   width: 48px;
   height: 48px;
   border-radius: 999px;
-  background:
-    linear-gradient(110deg,
-      var(--skel-a, var(--color-surface-alt)) 25%,
-      var(--skel-b, var(--color-surface)) 40%,
-      var(--skel-a, var(--color-surface-alt)) 65%);
+  position: relative;
+  display: block;
+  background: var(--color-surface-alt);
+  background-image: linear-gradient(110deg,
+      var(--skel-a, var(--color-surface-alt)) 20%,
+      var(--skel-b, var(--color-surface)) 45%,
+      var(--skel-a, var(--color-surface-alt)) 70%);
   background-size: 200% 100%;
   animation: skel-reel-shimmer 1.25s ease-in-out infinite;
-  box-shadow: 0 0 0 1px var(--color-border);
-  opacity: .9;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 2px 4px rgba(0,0,0,.12);
+  z-index: 3; /* above video layer */
+  opacity: .95;
 }
 
-.reel-skel-lines {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  gap: 10px;
-  width: 100%;
-  max-width: 640px;
+/* Ensure avatar + bars also sit above video (defensive) */
+.reel-skel-avatar,
+.reel-skel-lines { z-index: 3; }
+
+/* DARK THEME explicit override for circles */
+@media (prefers-color-scheme: dark) {
+  .reels-feed.is-loading .reel-skel-circle {
+    --skel-a: #1f2a3a;
+    --skel-b: #2d3a50;
+    border-color: #2f3e55;
+    box-shadow: 0 2px 6px -2px rgba(0,0,0,.55);
+  }
+}
+:root[data-theme='dark'] .reels-feed.is-loading .reel-skel-circle {
+  --skel-a: #1f2a3a;
+  --skel-b: #2d3a50;
+  border-color: #2f3e55;
+  box-shadow: 0 2px 6px -2px rgba(0,0,0,.55);
 }
 
-.reel-skel-author {
-  display: grid;
-  grid-template-columns: 32px 1fr;
-  gap: 10px;
-  align-items: center;
-}
-
-.reel-skel-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background:
-    linear-gradient(100deg,
-      var(--skel-a, var(--color-surface-alt)) 20%,
-      var(--skel-b, var(--color-surface)) 38%,
-      var(--skel-a, var(--color-surface-alt)) 60%);
-  background-size: 180% 100%;
+/* ...existing code... */
   animation: skel-reel-shimmer 1.25s ease-in-out infinite;
   box-shadow: 0 0 0 1px var(--color-border);
 }
