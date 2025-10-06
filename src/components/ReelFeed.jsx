@@ -351,15 +351,27 @@ const ReelFeed = ({
     setComments([])
     setLoadingComments(true)
     try {
-      const res = await fetch(`${API_BASE}/api/food/comments/${foodId}`, { credentials: 'include' })
-      if (res.ok) {
-        const data = await res.json()
-        setComments(data.comments || [])
-        const likedMap = {}
-        data.comments?.forEach(c => { if (c.liked) likedMap[c._id] = true })
-        setCommentLikes(likedMap)
+      const res = await fetch(`${API_BASE}/api/food/comments/${foodId}?t=${Date.now()}`, { credentials: 'include' })
+      if (!res.ok) {
+        let msg = `Failed (${res.status})`
+        try {
+          const data = await res.json()
+          msg = data?.message ? `${data.message} (${res.status})` : msg
+        } catch {}
+        if (res.status === 401) window.toast?.('Sign in to view comments', { type:'warning' })
+        else window.toast?.(msg, { type:'error' })
+        setComments([])
+        return
       }
-    } catch {/* noop */} finally {
+      const data = await res.json()
+      setComments(data.comments || [])
+      const likedMap = {}
+      data.comments?.forEach(c => { if (c.liked) likedMap[c._id] = true })
+      setCommentLikes(likedMap)
+    } catch (err) {
+      console.error('openComments error:', err)
+      window.toastError?.(err, 'Unable to load comments')
+    } finally {
       setLoadingComments(false)
     }
   }
@@ -372,36 +384,35 @@ const ReelFeed = ({
   async function submitComment(e) {
     e.preventDefault()
     if (!commentText.trim() || !commentSheet.foodId) return
+    const draft = commentText.trim()
     const tempId = 'tmp_' + Date.now()
-    const optimistic = {
-      _id: tempId,
-      text: commentText.trim(),
-      likeCount: 0,
-      liked: false,
-      user: { name: profileName },
-      relTime: 'now'
-    }
+    const optimistic = { _id: tempId, text: draft, likeCount: 0, liked: false, user: { name: profileName }, relTime: 'now' }
     setComments(prev => [optimistic, ...prev])
     setCommentText('')
-    // increment local count on reel
-    // (shallow update—only visual)
     try {
       const res = await fetch(`${API_BASE}/api/food/comment`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ foodId: commentSheet.foodId, text: optimistic.text })
+        body: JSON.stringify({ foodId: commentSheet.foodId, text: draft })
       })
-      if (res.ok) {
-        const data = await res.json()
-        setComments(prev => prev.map(c => c._id === tempId ? data.comment : c))
-      } else {
+      if (!res.ok) {
+        let msg = `Post failed (${res.status})`
+        try {
+          const data = await res.json()
+          msg = data?.message ? `${data.message} (${res.status})` : msg
+        } catch {}
+        if (res.status === 401) window.toast?.('Sign in to comment', { type:'warning' })
+        else window.toast?.(msg, { type:'error' })
         setComments(prev => prev.filter(c => c._id !== tempId))
-        window.toast?.('Failed to post comment', { type: 'error' })
+        return
       }
-    } catch {
+      const data = await res.json()
+      setComments(prev => prev.map(c => c._id === tempId ? data.comment : c))
+    } catch (err) {
+      console.error('submitComment error:', err)
+      window.toastError?.(err, 'Failed to post comment')
       setComments(prev => prev.filter(c => c._id !== tempId))
-      window.toast?.('Failed to post comment', { type: 'error' })
     }
   }
 
