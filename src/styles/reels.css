@@ -16,6 +16,13 @@
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+  /* HIDE SCROLLBAR (while preserving scroll) */
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/Edge legacy */
+}
+.reels-feed::-webkit-scrollbar {  /* WebKit */
+  width: 0;
+  height: 0;
 }
 
 /* Each reel takes full viewport */
@@ -1276,11 +1283,29 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 0 var(--space-6) calc(env(safe-area-inset-bottom,0) + 72px);
-  gap: 28px;
-  pointer-events: none;
+  padding: 0 var(--space-4) calc(env(safe-area-inset-bottom,0) + 48px); /* reduced bottom padding */
+  gap: 18px;                                  /* was 28px */
+  box-sizing: border-box;
 }
 
+/* Prevent any child from pushing total height beyond 100dvh */
+.reel-skel > * {
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+/* Action placeholder column stays fully visible without pushing height */
+.reel-skel-actions {
+  position: absolute;
+  right: 10px;
+  bottom: 72px; /* lowered to match reduced padding */
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 2;
+}
+
+/* Video placeholder covers full reel area behind overlays */
 .reel-skel-video {
   position: absolute;
   inset: 0;
@@ -1292,53 +1317,35 @@
   background-size: 200% 100%;
   animation: skel-reel-shimmer 1.25s ease-in-out infinite;
   filter: brightness(1.02);
+  min-height: 100%;
 }
 
-.reel-skel-actions {
-  position: absolute;
-  right: 10px;
-  bottom: 96px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  z-index: 2;
+/* Optional: tighter line skeleton stack to avoid overflow on very short screens */
+.reel-skel-lines .skeleton-bar.wide,
+.reel-skel-lines .skeleton-bar.med,
+.reel-skel-lines .skeleton-bar.small {
+  transform: translateZ(0);
 }
 
-/* UPDATED: clearer circle styling (was gradient too similar to backdrop) */
-.reel-skel-circle {
-  width: 48px;
-  height: 48px;
-  border-radius: 999px;
-  position: relative;
-  display: block;
-  background: var(--color-surface-alt);
-  background-image: linear-gradient(110deg,
-      var(--skel-a, var(--color-surface-alt)) 20%,
-      var(--skel-b, var(--color-surface)) 45%,
-      var(--skel-a, var(--color-surface-alt)) 70%);
-  background-size: 200% 100%;
-  animation: skel-reel-shimmer 1.25s ease-in-out infinite;
-  border: 1px solid var(--color-border);
-  box-shadow: 0 2px 4px rgba(0,0,0,.12);
-  z-index: 3; /* above video layer */
-  opacity: .95;
-}
-
-/* Ensure avatar + bars also sit above video (defensive) */
-.reel-skel-avatar,
-.reel-skel-lines { z-index: 3; }
-
-/* DARK THEME explicit override for circles */
-@media (prefers-color-scheme: dark) {
-  .reels-feed.is-loading .reel-skel-circle {
-    --skel-a: #1f2a3a;
-    --skel-b: #2d3a50;
-    border-color: #2f3e55;
-    box-shadow: 0 2px 6px -2px rgba(0,0,0,.55);
+/* Ultra-small heights: compress spacing further */
+@media (max-height: 640px) {
+  .reel-skel {
+    padding: 0 var(--space-3) calc(env(safe-area-inset-bottom,0) + 40px);
+    gap: 14px;
   }
+  .reel-skel-actions { bottom: 60px; }
 }
-:root[data-theme='dark'] .reels-feed.is-loading .reel-skel-circle {
-  --skel-a: #1f2a3a;
+
+/* Very short (landscape mobile) safeguard */
+@media (max-height: 520px) {
+  .reel-skel {
+    padding: 0 var(--space-3) calc(env(safe-area-inset-bottom,0) + 30px);
+    gap: 10px;
+  }
+  .reel-skel-actions { bottom: 48px; }
+}
+
+/* ...existing code... */
   --skel-b: #2d3a50;
   border-color: #2f3e55;
   box-shadow: 0 2px 6px -2px rgba(0,0,0,.55);
