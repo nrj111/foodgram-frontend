@@ -1405,9 +1405,7 @@
   .reel-skel-avatar,
   .skeleton-bar { animation: none; background-position: 0 0; }
 }
-  gap: 10px;
-  flex-wrap: wrap;
-}
+/* Removed stray 'gap' and 'flex-wrap' declarations that were outside any selector */
 .share-btn {
   height: 40px;
   padding: 0 18px;
