@@ -356,19 +356,24 @@ const ReelFeed = ({
     setLoadingComments(true);
     
     try {
-      const res = await fetch(`${API_BASE}/api/food/comments/${foodId}?t=${Date.now()}`, { 
-        credentials: 'include' 
+      // Use a more reliable approach to pass credentials
+      const res = await fetch(`${API_BASE}/api/food/comments/${foodId}`, { 
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
       });
       
       if (!res.ok) {
-        const msg = `Failed to load comments (${res.status})`;
-        window.toast?.(msg, { type: 'error' });
+        let errorMsg = `Failed to load comments (${res.status})`;
+        window.toast?.(errorMsg, { type: 'error' });
         setComments([]);
         return;
       }
       
       const data = await res.json();
-      console.log('Comments loaded:', data);
+      console.log('Comments data:', data);
       setComments(data.comments || []);
       
       const likedMap = {};
@@ -402,10 +407,10 @@ const ReelFeed = ({
     const tempId = 'tmp_' + Date.now();
     const isPartner = localStorage.getItem('profileType') === 'partner';
     
-    // Optimistic UI update with correct name display
-    const optimisticName = isPartner 
-      ? localStorage.getItem('profileName') || 'Partner' 
-      : profileName || 'User';
+    // More accurate name and type detection
+    const profileType = localStorage.getItem('profileType');
+    const displayName = localStorage.getItem('profileName') || 
+      (profileType === 'partner' ? 'Partner' : 'User');
     
     const optimistic = { 
       _id: tempId, 
@@ -413,33 +418,34 @@ const ReelFeed = ({
       likeCount: 0, 
       liked: false, 
       user: { 
-        name: optimisticName,
-        type: isPartner ? 'partner' : 'user'
+        name: displayName,
+        type: profileType
       }, 
-      relTime: 'now' 
+      relTime: 'just now' 
     };
     
     setComments(prev => [optimistic, ...prev]);
     setCommentText('');
     
     try {
-      console.log('Submitting comment as:', isPartner ? 'Partner' : 'User');
-      
       const res = await fetch(`${API_BASE}/api/food/comment`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ foodId: commentSheet.foodId, text })
       });
       
       if (!res.ok) {
-        window.toast?.(`Failed to post comment (${res.status})`, { type: 'error' });
+        const statusText = res.statusText || `Error ${res.status}`;
+        window.toast?.(`Failed to post comment: ${statusText}`, { type: 'error' });
         setComments(prev => prev.filter(c => c._id !== tempId));
         return;
       }
       
       const data = await res.json();
-      console.log('Comment success:', data);
       setComments(prev => prev.map(c => c._id === tempId ? data.comment : c));
     } catch (err) {
       console.error('Submit comment error:', err);
@@ -1023,10 +1029,11 @@ const ReelFeed = ({
                 <div className="comments-empty">No comments yet. Be first!</div>
               )}
               {!loadingComments && comments.map(c => {
-                // Get letter from comment user's name
-                const userName = c.user?.name || 'User';
-                const letter = userName.trim().charAt(0).toUpperCase();
-                const isPartner = c.user?.type === 'partner';
+                // More reliable name and type detection
+                const userName = c.user?.name || 'Unknown';
+                const letter = userName.charAt(0).toUpperCase();
+                const isPartner = c.user?.type === 'partner' || 
+                  (typeof c.user === 'object' && 'foodPartner' in c.user);
                 const liked = !!commentLikes[c._id];
                 
                 return (
@@ -1036,7 +1043,7 @@ const ReelFeed = ({
                       <div className="comment-meta">
                         <span className="comment-user">
                           {userName}
-                          {isPartner && <span style={{marginLeft:'4px',opacity:0.8}}>· Partner</span>}
+                          {isPartner && <span style={{marginLeft:'4px',color:'var(--color-accent)',fontWeight:'500'}}>· Partner</span>}
                         </span>
                         <span className="comment-dot">•</span>
                         <span className="comment-time">{c.relTime || ''}</span>
@@ -1118,14 +1125,4 @@ const ReelFeed = ({
     </div>
   )
 }
-
-export default ReelFeed
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-export default ReelFeed
+export default ReelFeed;
