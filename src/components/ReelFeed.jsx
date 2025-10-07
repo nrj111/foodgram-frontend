@@ -356,6 +356,7 @@ const ReelFeed = ({
     setLoadingComments(true);
     
     try {
+      // Add debug flag to trace authentication issues
       const res = await fetch(`${API_BASE}/api/food/comments/${foodId}?t=${Date.now()}&debug=1`, { 
         credentials: 'include' 
       });
@@ -365,7 +366,7 @@ const ReelFeed = ({
         try {
           const data = await res.json();
           msg = data?.message || msg;
-          setShareDebug(data?.authDebug || {}); // Debug auth info
+          console.log('Auth debug info:', data?.authDebug || {});
         } catch (err) {
           console.error('Parse error:', err);
         }
@@ -376,7 +377,11 @@ const ReelFeed = ({
       
       const data = await res.json();
       setComments(data.comments || []);
-      setShareDebug(data?.authDebug || {}); // Store auth debug info
+      
+      // Log auth debug info
+      if (data?.authDebug) {
+        console.log('Comment auth status:', data.authDebug);
+      }
       
       const likedMap = {};
       data.comments?.forEach(c => { 
@@ -407,13 +412,16 @@ const ReelFeed = ({
     if (!text || !commentSheet.foodId) return;
     
     const tempId = 'tmp_' + Date.now();
+    const isPartner = localStorage.getItem('profileType') === 'partner';
+    
+    // Fix: Create correct optimistic comment based on actor type
     const optimistic = { 
       _id: tempId, 
       text, 
       likeCount: 0, 
       liked: false, 
       user: { 
-        name: profileName || (localStorage.getItem('profileType') === 'partner' ? 'Partner' : 'You') 
+        name: isPartner ? 'Partner' : (profileName || 'You')
       }, 
       relTime: 'now' 
     };
@@ -422,6 +430,8 @@ const ReelFeed = ({
     setCommentText('');
     
     try {
+      console.log('Submitting comment as:', isPartner ? 'Partner' : 'User');
+      
       const res = await fetch(`${API_BASE}/api/food/comment`, {
         method: 'POST',
         credentials: 'include',
@@ -434,8 +444,10 @@ const ReelFeed = ({
         try {
           const data = await res.json();
           msg = data?.message || msg;
-          console.log('Comment error response:', data); // Log full error
-        } catch {}
+          console.log('Comment error details:', data);
+        } catch (err) {
+          console.error('Response parse error:', err);
+        }
         
         window.toast?.(msg, { type: 'error' });
         setComments(prev => prev.filter(c => c._id !== tempId));
@@ -443,6 +455,7 @@ const ReelFeed = ({
       }
       
       const data = await res.json();
+      console.log('Comment success:', data);
       setComments(prev => prev.map(c => c._id === tempId ? data.comment : c));
     } catch (err) {
       console.error('Submit comment error:', err);
