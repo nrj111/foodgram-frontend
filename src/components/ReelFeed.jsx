@@ -356,32 +356,20 @@ const ReelFeed = ({
     setLoadingComments(true);
     
     try {
-      // Add debug flag to trace authentication issues
-      const res = await fetch(`${API_BASE}/api/food/comments/${foodId}?t=${Date.now()}&debug=1`, { 
+      const res = await fetch(`${API_BASE}/api/food/comments/${foodId}?t=${Date.now()}`, { 
         credentials: 'include' 
       });
       
       if (!res.ok) {
-        let msg = `Failed to load comments (${res.status})`;
-        try {
-          const data = await res.json();
-          msg = data?.message || msg;
-          console.log('Auth debug info:', data?.authDebug || {});
-        } catch (err) {
-          console.error('Parse error:', err);
-        }
+        const msg = `Failed to load comments (${res.status})`;
         window.toast?.(msg, { type: 'error' });
         setComments([]);
         return;
       }
       
       const data = await res.json();
+      console.log('Comments loaded:', data);
       setComments(data.comments || []);
-      
-      // Log auth debug info
-      if (data?.authDebug) {
-        console.log('Comment auth status:', data.authDebug);
-      }
       
       const likedMap = {};
       data.comments?.forEach(c => { 
@@ -414,14 +402,19 @@ const ReelFeed = ({
     const tempId = 'tmp_' + Date.now();
     const isPartner = localStorage.getItem('profileType') === 'partner';
     
-    // Fix: Create correct optimistic comment based on actor type
+    // Optimistic UI update with correct name display
+    const optimisticName = isPartner 
+      ? localStorage.getItem('profileName') || 'Partner' 
+      : profileName || 'User';
+    
     const optimistic = { 
       _id: tempId, 
       text, 
       likeCount: 0, 
       liked: false, 
       user: { 
-        name: isPartner ? 'Partner' : (profileName || 'You')
+        name: optimisticName,
+        type: isPartner ? 'partner' : 'user'
       }, 
       relTime: 'now' 
     };
@@ -440,16 +433,7 @@ const ReelFeed = ({
       });
       
       if (!res.ok) {
-        let msg = `Failed to post comment (${res.status})`;
-        try {
-          const data = await res.json();
-          msg = data?.message || msg;
-          console.log('Comment error details:', data);
-        } catch (err) {
-          console.error('Response parse error:', err);
-        }
-        
-        window.toast?.(msg, { type: 'error' });
+        window.toast?.(`Failed to post comment (${res.status})`, { type: 'error' });
         setComments(prev => prev.filter(c => c._id !== tempId));
         return;
       }
@@ -1039,14 +1023,21 @@ const ReelFeed = ({
                 <div className="comments-empty">No comments yet. Be first!</div>
               )}
               {!loadingComments && comments.map(c => {
-                const letter = (c.user?.name || 'U').trim().charAt(0).toUpperCase()
-                const liked = !!commentLikes[c._id]
+                // Get letter from comment user's name
+                const userName = c.user?.name || 'User';
+                const letter = userName.trim().charAt(0).toUpperCase();
+                const isPartner = c.user?.type === 'partner';
+                const liked = !!commentLikes[c._id];
+                
                 return (
                   <div key={c._id} className="comment-row">
                     <div className="comment-avatar" aria-hidden="true">{letter}</div>
                     <div className="comment-body">
                       <div className="comment-meta">
-                        <span className="comment-user">{c.user?.name || 'User'}</span>
+                        <span className="comment-user">
+                          {userName}
+                          {isPartner && <span style={{marginLeft:'4px',opacity:0.8}}>· Partner</span>}
+                        </span>
                         <span className="comment-dot">•</span>
                         <span className="comment-time">{c.relTime || ''}</span>
                       </div>
@@ -1120,6 +1111,15 @@ const ReelFeed = ({
                   onClick={closeShare}
                 >Done</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default ReelFeed
             </div>
           </div>
         </div>
