@@ -28,7 +28,10 @@ const UserLogin = () => {
       const response = await axios.post(
         `${API_BASE}/api/auth/user/login`,
         { email, password },
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          timeout: 10000 // 10-second timeout
+        }
       );
 
       if (response.status === 200) {
@@ -37,7 +40,7 @@ const UserLogin = () => {
           localStorage.setItem('profileName', response.data?.fullName || '')
           localStorage.setItem('profileEmail', response.data?.email || '')
           localStorage.setItem('profileType', 'user')
-          await fetch(`${API_BASE}/api/auth/foodPartner/logout`, { credentials: 'include' }) // ensure partner session cleared
+          await fetch(`${API_BASE}/api/auth/foodPartner/logout`, { credentials: 'include' })
         } catch (error) { console.error(error) }
         navigate("/");
       } else {
@@ -46,9 +49,22 @@ const UserLogin = () => {
         window.toast?.(msg, { type: "error" });
       }
     } catch (err) {
-      const msg = err.response?.data?.message || "Login failed";
-      setError(msg);
-      window.toastError?.(err, msg);
+      console.error('Login error details:', err);
+      
+      let errorMessage = "Login failed";
+      if (err.response) {
+        // Server responded with an error
+        errorMessage = err.response.data?.message || `Error: ${err.response.status}`;
+      } else if (err.request && !err.response) {
+        // No response from server
+        errorMessage = "Server not responding. Please check your connection and try again.";
+      } else {
+        // Request setup error
+        errorMessage = err.message || "Unknown error during login";
+      }
+      
+      setError(errorMessage);
+      window.toast?.(errorMessage, { type: "error" });
     } finally {
       setLoading(false);
     }
