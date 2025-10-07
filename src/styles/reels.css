@@ -1412,6 +1412,7 @@
   .reel-skel-avatar,
   .skeleton-bar { animation: none; background-position: 0 0; }
 }
+.share-btn {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 999px;

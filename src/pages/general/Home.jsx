@@ -177,6 +177,19 @@ const Home = () => {
         }
     }
 
+    // Add this function to handle comment authorization
+    async function openCommentSection(item) {
+        const isUser = localStorage.getItem('profileType') === 'user';
+        const isPartner = localStorage.getItem('profileType') === 'partner';
+        
+        if (!isUser && !isPartner) {
+          window.toast?.('Sign in to view and add comments', { type: 'info' });
+          return { ok: false, unauthorized: true };
+        }
+        
+        return { ok: true };
+      }
+
     // Optional lightweight loading
     if (loading && videos.length === 0) {
         return (
@@ -227,6 +240,7 @@ const Home = () => {
               onLike={likeVideo}
               onSave={saveVideo}
               onDelete={deleteVideo}
+              onOpenComment={openCommentSection}
               emptyMessage={shareOnly ? "Reel unavailable." : "No videos available."}
               focusId={shareOnly ? videos?.[0]?._id : focusId}
               publicSingle={!!focusId && !isAuthed}

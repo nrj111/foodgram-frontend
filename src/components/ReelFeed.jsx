@@ -346,33 +346,48 @@ const ReelFeed = ({
   }
 
   async function openComments(foodId) {
-    if (readOnly) { window.toast?.('Sign in to view comments', { type:'info' }); return }
-    setCommentSheet({ open: true, foodId })
-    setComments([])
-    setLoadingComments(true)
+    if (!isAuthed) {
+      window.toast?.('Sign in to view and add comments', { type: 'info' });
+      return;
+    }
+    
+    setCommentSheet({ open: true, foodId });
+    setComments([]);
+    setLoadingComments(true);
+    
     try {
-      const res = await fetch(`${API_BASE}/api/food/comments/${foodId}?t=${Date.now()}`, { credentials: 'include' })
+      const res = await fetch(`${API_BASE}/api/food/comments/${foodId}?t=${Date.now()}&debug=1`, { 
+        credentials: 'include' 
+      });
+      
       if (!res.ok) {
-        let msg = `Failed (${res.status})`
+        let msg = `Failed to load comments (${res.status})`;
         try {
-          const data = await res.json()
-          msg = data?.message ? `${data.message} (${res.status})` : msg
-        } catch {}
-        if (res.status === 401) window.toast?.('Sign in to view comments', { type:'warning' })
-        else window.toast?.(msg, { type:'error' })
-        setComments([])
-        return
+          const data = await res.json();
+          msg = data?.message || msg;
+          setShareDebug(data?.authDebug || {}); // Debug auth info
+        } catch (err) {
+          console.error('Parse error:', err);
+        }
+        window.toast?.(msg, { type: 'error' });
+        setComments([]);
+        return;
       }
-      const data = await res.json()
-      setComments(data.comments || [])
-      const likedMap = {}
-      data.comments?.forEach(c => { if (c.liked) likedMap[c._id] = true })
-      setCommentLikes(likedMap)
+      
+      const data = await res.json();
+      setComments(data.comments || []);
+      setShareDebug(data?.authDebug || {}); // Store auth debug info
+      
+      const likedMap = {};
+      data.comments?.forEach(c => { 
+        if (c.liked) likedMap[c._id] = true;
+      });
+      setCommentLikes(likedMap);
     } catch (err) {
-      console.error('openComments error:', err)
-      window.toastError?.(err, 'Unable to load comments')
+      console.error('Comments error:', err);
+      window.toastError?.(err, 'Unable to load comments');
     } finally {
-      setLoadingComments(false)
+      setLoadingComments(false);
     }
   }
 
@@ -382,37 +397,57 @@ const ReelFeed = ({
   }
 
   async function submitComment(e) {
-    e.preventDefault()
-    if (!commentText.trim() || !commentSheet.foodId) return
-    const draft = commentText.trim()
-    const tempId = 'tmp_' + Date.now()
-    const optimistic = { _id: tempId, text: draft, likeCount: 0, liked: false, user: { name: profileName }, relTime: 'now' }
-    setComments(prev => [optimistic, ...prev])
-    setCommentText('')
+    e.preventDefault();
+    if (!isAuthed) {
+      window.toast?.('Sign in to comment', { type: 'info' });
+      return;
+    }
+    
+    const text = commentText.trim();
+    if (!text || !commentSheet.foodId) return;
+    
+    const tempId = 'tmp_' + Date.now();
+    const optimistic = { 
+      _id: tempId, 
+      text, 
+      likeCount: 0, 
+      liked: false, 
+      user: { 
+        name: profileName || (localStorage.getItem('profileType') === 'partner' ? 'Partner' : 'You') 
+      }, 
+      relTime: 'now' 
+    };
+    
+    setComments(prev => [optimistic, ...prev]);
+    setCommentText('');
+    
     try {
       const res = await fetch(`${API_BASE}/api/food/comment`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ foodId: commentSheet.foodId, text: draft })
-      })
+        body: JSON.stringify({ foodId: commentSheet.foodId, text })
+      });
+      
       if (!res.ok) {
-        let msg = `Post failed (${res.status})`
+        let msg = `Failed to post comment (${res.status})`;
         try {
-          const data = await res.json()
-          msg = data?.message ? `${data.message} (${res.status})` : msg
+          const data = await res.json();
+          msg = data?.message || msg;
+          console.log('Comment error response:', data); // Log full error
         } catch {}
-        if (res.status === 401) window.toast?.('Sign in to comment', { type:'warning' })
-        else window.toast?.(msg, { type:'error' })
-        setComments(prev => prev.filter(c => c._id !== tempId))
-        return
+        
+        window.toast?.(msg, { type: 'error' });
+        setComments(prev => prev.filter(c => c._id !== tempId));
+        return;
       }
-      const data = await res.json()
-      setComments(prev => prev.map(c => c._id === tempId ? data.comment : c))
+      
+      const data = await res.json();
+      setComments(prev => prev.map(c => c._id === tempId ? data.comment : c));
     } catch (err) {
-      console.error('submitComment error:', err)
-      window.toastError?.(err, 'Failed to post comment')
-      setComments(prev => prev.filter(c => c._id !== tempId))
+      console.error('Submit comment error:', err);
+      window.toastError?.(err, 'Failed to post comment');
+      setComments(prev => prev.filter(c => c._id !== tempId));
     }
   }
 
